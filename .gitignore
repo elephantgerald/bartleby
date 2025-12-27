@@ -1,0 +1,109 @@
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio files
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# Visual Studio Code
+.vscode/
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Backup & temp files
+*~
+*.bak
+*.tmp
+*.temp
+*.swp
+*.*~
+
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# MAUI specific
+*.app
+*.ipa
+*.apk
+*.aab
+*.msix
+*.msixbundle
+*.appxbundle
+*.appx
+
+# Android
+local.properties
+
+# iOS
+*.dSYM.zip
+*.dSYM
+
+# Test results
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coveragexml
+
+# LiteDB database files (local dev data)
+*.db
+
+# Publish output
+publish/
+
+# BenchmarkDotNet
+BenchmarkDotNet.Artifacts/
+
+# Secrets and credentials
+*.pfx
+*.p12
+appsettings.local.json
+secrets.json
