@@ -74,8 +74,12 @@ public class GitHubWorkSource : IWorkSource
 
         var client = GetClient(settings.GitHubToken);
 
-        // Build labels list with status label
-        var labels = new List<string>(workItem.Labels);
+        // Build labels list, filtering out old status labels before adding the new one
+        var statusLabels = new[] { "bartleby:ready", "bartleby:in-progress", "bartleby:blocked", "bartleby:failed" };
+        var labels = workItem.Labels
+            .Where(l => !statusLabels.Contains(l, StringComparer.OrdinalIgnoreCase))
+            .ToList();
+
         var statusLabel = GetStatusLabel(workItem.Status);
         if (!string.IsNullOrEmpty(statusLabel))
         {

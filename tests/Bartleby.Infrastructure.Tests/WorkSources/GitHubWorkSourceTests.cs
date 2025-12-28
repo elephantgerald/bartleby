@@ -399,6 +399,39 @@ public class GitHubWorkSourceTests
         capturedUpdate.Labels.Should().Contain("bartleby:ready");
     }
 
+    [Fact]
+    public async Task UpdateStatusAsync_RemovesOldStatusLabels_WhenTransitioningStatus()
+    {
+        // Arrange - work item has old "ready" label but status is now InProgress
+        var workItem = new WorkItem
+        {
+            ExternalId = "42",
+            Status = WorkItemStatus.InProgress,
+            Labels = ["bug", "bartleby:ready", "high-priority"]
+        };
+
+        GitHubIssueUpdate? capturedUpdate = null;
+        _gitHubApiClientMock
+            .Setup(c => c.UpdateIssueAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                42,
+                It.IsAny<GitHubIssueUpdate>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<string, string, int, GitHubIssueUpdate, CancellationToken>((o, r, n, u, ct) => capturedUpdate = u)
+            .Returns(Task.CompletedTask);
+
+        // Act
+        await _sut.UpdateStatusAsync(workItem);
+
+        // Assert - old status label removed, new one added, non-status labels preserved
+        capturedUpdate.Should().NotBeNull();
+        capturedUpdate!.Labels.Should().Contain("bug");
+        capturedUpdate.Labels.Should().Contain("high-priority");
+        capturedUpdate.Labels.Should().Contain("bartleby:in-progress");
+        capturedUpdate.Labels.Should().NotContain("bartleby:ready");
+    }
+
     #endregion
 
     #region AddCommentAsync Tests
