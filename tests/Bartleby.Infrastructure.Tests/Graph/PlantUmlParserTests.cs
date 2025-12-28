@@ -636,4 +636,220 @@ public class PlantUmlParserTests
     }
 
     #endregion
+
+    #region Extended Syntax Tests (PR Review Feedback)
+
+    [Theory]
+    [InlineData("task-1")]
+    [InlineData("my.component")]
+    [InlineData("task_name")]
+    [InlineData("my-task.v2")]
+    [InlineData("Task-With-Hyphens")]
+    public void Parse_AliasWithSpecialChars_ParsesCorrectly(string alias)
+    {
+        // Arrange
+        var content = $"""
+            @startuml
+            component "Test" as {alias}
+            @enduml
+            """;
+
+        // Act
+        var result = _parser.Parse(content);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Nodes.Should().ContainKey(alias);
+        result.Nodes[alias].Alias.Should().Be(alias);
+    }
+
+    [Fact]
+    public void Parse_SingleDashArrow_ParsesCorrectly()
+    {
+        // Arrange
+        var content = """
+            @startuml
+            component "A" as A
+            component "B" as B
+            A -> B
+            @enduml
+            """;
+
+        // Act
+        var result = _parser.Parse(content);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Edges.Should().HaveCount(1);
+        result.Edges[0].From.Should().Be("A");
+        result.Edges[0].To.Should().Be("B");
+        result.Edges[0].ArrowType.Should().Be(PlantUmlArrowType.Solid);
+    }
+
+    [Theory]
+    [InlineData("A --> B", "A", "B")]
+    [InlineData("A -> B", "A", "B")]
+    [InlineData("A ---> B", "A", "B")]
+    [InlineData("A ..> B", "A", "B")]
+    [InlineData("A ...> B", "A", "B")]
+    [InlineData("A ==> B", "A", "B")]
+    [InlineData("A ===> B", "A", "B")]
+    public void Parse_VariousArrowLengths_ParsesCorrectly(string arrow, string expectedFrom, string expectedTo)
+    {
+        // Arrange
+        var content = $"""
+            @startuml
+            component "A" as A
+            component "B" as B
+            {arrow}
+            @enduml
+            """;
+
+        // Act
+        var result = _parser.Parse(content);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Edges.Should().HaveCount(1);
+        result.Edges[0].From.Should().Be(expectedFrom);
+        result.Edges[0].To.Should().Be(expectedTo);
+    }
+
+    [Theory]
+    [InlineData("A -->o B")]
+    [InlineData("A o--> B")]
+    [InlineData("A -->* B")]
+    [InlineData("A *--> B")]
+    [InlineData("A --># B")]
+    [InlineData("A -->x B")]
+    public void Parse_ArrowWithDecorators_ParsesCorrectly(string arrow)
+    {
+        // Arrange
+        var content = $"""
+            @startuml
+            component "A" as A
+            component "B" as B
+            {arrow}
+            @enduml
+            """;
+
+        // Act
+        var result = _parser.Parse(content);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Edges.Should().HaveCount(1);
+        result.Edges[0].From.Should().Be("A");
+        result.Edges[0].To.Should().Be("B");
+    }
+
+    [Fact]
+    public void Parse_TitleWithEscapedQuotes_UnescapesCorrectly()
+    {
+        // Arrange
+        var content = """
+            @startuml
+            component "Say \"Hello\" World" as A
+            @enduml
+            """;
+
+        // Act
+        var result = _parser.Parse(content);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Nodes.Should().HaveCount(1);
+        result.Nodes["A"].Title.Should().Be("Say \"Hello\" World");
+    }
+
+    [Fact]
+    public void Parse_TitleWithEscapedBackslash_UnescapesCorrectly()
+    {
+        // Arrange
+        var content = """
+            @startuml
+            component "Path: C:\\Users\\test" as A
+            @enduml
+            """;
+
+        // Act
+        var result = _parser.Parse(content);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Nodes["A"].Title.Should().Be("Path: C:\\Users\\test");
+    }
+
+    [Fact]
+    public void Parse_ReverseArrowWithDecorators_ParsesCorrectly()
+    {
+        // Arrange
+        var content = """
+            @startuml
+            component "A" as A
+            component "B" as B
+            A <--o B
+            @enduml
+            """;
+
+        // Act
+        var result = _parser.Parse(content);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Edges.Should().HaveCount(1);
+        result.Edges[0].From.Should().Be("B");
+        result.Edges[0].To.Should().Be("A");
+    }
+
+    [Fact]
+    public void Parse_AliasesWithHyphensInEdge_ParsesCorrectly()
+    {
+        // Arrange
+        var content = """
+            @startuml
+            component "Task 1" as task-1
+            component "Task 2" as task-2
+            task-1 --> task-2
+            @enduml
+            """;
+
+        // Act
+        var result = _parser.Parse(content);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Nodes.Should().HaveCount(2);
+        result.Edges.Should().HaveCount(1);
+        result.Edges[0].From.Should().Be("task-1");
+        result.Edges[0].To.Should().Be("task-2");
+    }
+
+    [Fact]
+    public void Parse_ComplexDiagramWithExtendedSyntax_ParsesCorrectly()
+    {
+        // Arrange
+        var content = """
+            @startuml
+            component "Authentication \"OAuth\"" as auth-service
+            component "User DB" as user.db
+            component "API Gateway" as api_gateway
+
+            auth-service --> user.db : queries
+            api_gateway -> auth-service : validates
+            user.db <--o api_gateway : caches
+            @enduml
+            """;
+
+        // Act
+        var result = _parser.Parse(content);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Nodes.Should().HaveCount(3);
+        result.Nodes["auth-service"].Title.Should().Be("Authentication \"OAuth\"");
+        result.Edges.Should().HaveCount(3);
+    }
+
+    #endregion
 }

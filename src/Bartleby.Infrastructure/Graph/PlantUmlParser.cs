@@ -9,32 +9,46 @@ namespace Bartleby.Infrastructure.Graph;
 /// Supported PlantUML subset:
 /// - Node types: component, object, rectangle, node, package
 /// - Syntax: [type] "Title" as alias  OR  [type] alias
-/// - Arrows: -->, ..>, ==>, and reverse directions
+/// - Aliases: word chars, hyphens, dots (e.g., task-1, my.component)
+/// - Titles: quoted strings with escaped quote support (e.g., "Say \"Hello\"")
+/// - Arrows: ->, -->, ..>, ==>, with optional decorators (o, *, #, x, etc.)
 /// - Labels: A --> B : label text
 /// - Comments: ' single line comments
 /// - Blocks: @startuml / @enduml
 /// </remarks>
 public partial class PlantUmlParser
 {
+    // Alias pattern: word chars, hyphens, dots (covers most PlantUML identifiers)
+    private const string AliasPattern = @"[\w.\-]+";
+
+    // Title pattern: supports escaped quotes like \"
+    private const string TitlePattern = @"(?:[^""\\]|\\.)*";
+
     // Node patterns: component "Title" as Alias  OR  component Alias
     [GeneratedRegex(
-        @"^\s*(component|object|rectangle|node|package)\s+""([^""]+)""\s+as\s+(\w+)",
+        @"^\s*(component|object|rectangle|node|package)\s+""(" + TitlePattern + @")""\s+as\s+(" + AliasPattern + @")",
         RegexOptions.IgnoreCase)]
     private static partial Regex NodeWithTitleAndAliasRegex();
 
     [GeneratedRegex(
-        @"^\s*(component|object|rectangle|node|package)\s+(\w+)\s*$",
+        @"^\s*(component|object|rectangle|node|package)\s+(" + AliasPattern + @")\s*$",
         RegexOptions.IgnoreCase)]
     private static partial Regex NodeWithAliasOnlyRegex();
 
     // Edge patterns: A --> B : label  OR  A --> B
-    // Supports: -->, ..>, ==>, <--, <.., <==
+    // Supports: ->, -->, ..>, ==>, with optional decorators (o, *, #, x, }, {, +, ^)
+    // Decorators can appear on either side: o--> or -->o or o-->o
+    private const string ArrowDecorator = @"[o*#x}{+^]?";
+    private const string ArrowLine = @"-+|\.\.+|==+";  // One or more dashes, dots, or equals
+
+    // Forward: A -->o B  (decorator can be before line, after line, or after >)
     [GeneratedRegex(
-        @"^\s*(\w+)\s*(--|\.\.|\=\=)(\>)\s*(\w+)(?:\s*:\s*(.+))?$")]
+        @"^\s*(" + AliasPattern + @")\s+" + ArrowDecorator + @"(" + ArrowLine + @")" + ArrowDecorator + @">" + ArrowDecorator + @"\s*(" + AliasPattern + @")(?:\s*:\s*(.+))?$")]
     private static partial Regex ForwardEdgeRegex();
 
+    // Reverse: A <--o B  (decorator can be after <, before line, or after line)
     [GeneratedRegex(
-        @"^\s*(\w+)\s*(\<)(--|\.\.|==)\s*(\w+)(?:\s*:\s*(.+))?$")]
+        @"^\s*(" + AliasPattern + @")\s+<" + ArrowDecorator + @"(" + ArrowLine + @")" + ArrowDecorator + @"\s*(" + AliasPattern + @")(?:\s*:\s*(.+))?$")]
     private static partial Regex ReverseEdgeRegex();
 
     // Block markers
@@ -196,7 +210,7 @@ public partial class PlantUmlParser
             node = new PlantUmlNode
             {
                 Type = ParseNodeType(match.Groups[1].Value),
-                Title = match.Groups[2].Value,
+                Title = UnescapeTitle(match.Groups[2].Value),
                 Alias = match.Groups[3].Value,
                 LineNumber = lineNumber
             };
@@ -232,9 +246,9 @@ public partial class PlantUmlParser
             edge = new PlantUmlEdge
             {
                 From = match.Groups[1].Value,
-                To = match.Groups[4].Value,
+                To = match.Groups[3].Value,
                 ArrowType = ParseArrowType(match.Groups[2].Value),
-                Label = match.Groups[5].Success ? match.Groups[5].Value.Trim() : null,
+                Label = match.Groups[4].Success ? match.Groups[4].Value.Trim() : null,
                 LineNumber = lineNumber
             };
             return true;
@@ -246,10 +260,10 @@ public partial class PlantUmlParser
         {
             edge = new PlantUmlEdge
             {
-                From = match.Groups[4].Value, // Reversed
+                From = match.Groups[3].Value, // Reversed
                 To = match.Groups[1].Value,   // Reversed
-                ArrowType = ParseArrowType(match.Groups[3].Value),
-                Label = match.Groups[5].Success ? match.Groups[5].Value.Trim() : null,
+                ArrowType = ParseArrowType(match.Groups[2].Value),
+                Label = match.Groups[4].Success ? match.Groups[4].Value.Trim() : null,
                 LineNumber = lineNumber
             };
             return true;
@@ -257,6 +271,12 @@ public partial class PlantUmlParser
 
         return false;
     }
+
+    /// <summary>
+    /// Unescapes a title string (handles \" -> " and \\ -> \).
+    /// </summary>
+    private static string UnescapeTitle(string title) =>
+        title.Replace("\\\"", "\"").Replace("\\\\", "\\");
 
     private static PlantUmlNodeType ParseNodeType(string type) =>
         type.ToLowerInvariant() switch
@@ -269,11 +289,13 @@ public partial class PlantUmlParser
             _ => PlantUmlNodeType.Component
         };
 
-    private static PlantUmlArrowType ParseArrowType(string arrow) =>
-        arrow switch
-        {
-            ".." => PlantUmlArrowType.Dashed,
-            "==" => PlantUmlArrowType.Bold,
-            _ => PlantUmlArrowType.Solid
-        };
+    private static PlantUmlArrowType ParseArrowType(string arrow)
+    {
+        // Arrow can be -, --, ---, .., ..., ==, ===, etc.
+        if (arrow.StartsWith(".."))
+            return PlantUmlArrowType.Dashed;
+        if (arrow.StartsWith("=="))
+            return PlantUmlArrowType.Bold;
+        return PlantUmlArrowType.Solid; // - or -- or ---
+    }
 }
