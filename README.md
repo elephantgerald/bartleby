@@ -96,7 +96,36 @@ On first run, go to **Settings** and configure:
 
 **Phase 1 Complete** - Foundation skeleton is built and running.
 
-See [.context/bartleby-implementation-plan.md](.context/bartleby-implementation-plan.md) for full roadmap.
+## Development Workflow
+
+When working on stories/issues, follow this process:
+
+1. **Create a branch** from `master` using lowercase kebab-case:
+   ```bash
+   git checkout -b {issue-number}-{title-in-kebab-case}
+   # Example: git checkout -b 7-set-up-test-infrastructure
+   ```
+
+2. **Implement** the feature/fix
+
+3. **Test** before committing:
+   ```bash
+   dotnet test
+   ```
+
+4. **Commit & Push** your changes
+
+5. **Open a PR** for human review
+
+6. **After merge**, close the GitHub issue
+
+## Documentation
+
+| Document | Purpose | When to Read |
+|----------|---------|--------------|
+| [Design Document](.context/bartleby-design-doc.txt) | Vision, metaphors, UX philosophy | Understanding *why* Bartleby works the way it does. Read this to grasp the "Registrar's Desk" narrative, the guiding principles (Provenance, Parsimony, Canon), and the intended user experience. |
+| [Implementation Plan](.context/bartleby-implementation-plan.md) | Architecture, phases, technical specs | Understanding *how* to build Bartleby. Read this for project structure, implementation phases, NuGet packages, and current development status. |
+| [Work Index](.context/milestones/INDEX.md) | Stories & milestones from GitHub | Tracking *what* needs to be done. Browse cached GitHub issues organized by milestone with task lists and acceptance criteria. |
 
 ## License
 

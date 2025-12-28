@@ -73,6 +73,24 @@ dotnet test
 - **Async**: All I/O operations are async with CancellationToken support
 - **Nullable**: Project uses nullable reference types
 
+## Workflow for Completing Stories
+
+**IMPORTANT:** Follow this order when completing work:
+
+1. **Create branch** - Branch from `master` using ticket number + title in lowercase kebab-case
+   - Format: `{issue-number}-{lowercase-kebab-title}`
+   - Example: `7-set-up-test-infrastructure`
+2. **Implement** - Write the code/tests
+3. **Test together** - Run `dotnet test` and verify with the user
+4. **Commit & Push** - Only after tests pass and user approves
+5. **Create PR** - Open a pull request for human review
+6. **After PR merged** - Close the GitHub issue and update local tracking files
+
+**Rules:**
+- Do NOT close GitHub issues until the PR is merged
+- Do NOT update INDEX.md or story files until after merge
+- Always wait for user approval before committing
+
 ## Next Steps (Priority Order)
 
 1. Implement `OrchestratorService` as a background service
@@ -90,4 +108,8 @@ dotnet test
 
 ## Reference Documentation
 
-- Full implementation plan: `.context/bartleby-implementation-plan.md`
+| Document | Purpose | When to Use |
+|----------|---------|-------------|
+| [Design Document](.context/bartleby-design-doc.txt) | Vision, metaphors, UX philosophy | Consult when making UI/UX decisions, naming things, or ensuring changes align with Bartleby's identity as a "scrivener-agent." Key concepts: Registrar's Desk metaphor, Provenance/Parsimony/Canon principles, Ledger Drawer navigation. |
+| [Implementation Plan](.context/bartleby-implementation-plan.md) | Architecture, phases, technical specs | Consult when implementing features, understanding project structure, or checking what's already built vs. what's next. Contains architecture diagrams, phase breakdowns, and NuGet package versions. |
+| [Work Index](.context/milestones/INDEX.md) | Stories & milestones from GitHub | Consult when picking up work or understanding scope. Contains cached GitHub issues with full task lists, testing requirements, and acceptance criteria organized by milestone. |
