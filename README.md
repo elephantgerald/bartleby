@@ -98,7 +98,7 @@ On first run, go to **Settings** and configure:
 
 ## Development Workflow
 
-When working on stories/issues, follow this process:
+When working on stories/issues, follow this process. Status changes update both the **GitHub Project board** (via GraphQL API) and **local cache** (`.context/milestones/`).
 
 1. **Create a branch** from `main` using lowercase kebab-case:
    ```bash
@@ -106,10 +106,8 @@ When working on stories/issues, follow this process:
    # Example: git checkout -b 7-set-up-test-infrastructure
    ```
 
-2. **Move issue to In Progress** - Signal that work has started:
-   ```bash
-   gh issue edit {issue-number} --add-label "in-progress"
-   ```
+2. **Move issue to "In progress"** on the project board and update local cache:
+   - Update `.context/milestones/stories/story-{N}-*.md`: Change `**State:** Open` to `**State:** In Progress`
 
 3. **Implement** the feature/fix
 
@@ -119,7 +117,7 @@ When working on stories/issues, follow this process:
    ```
 
 5. **Update cached docs** (include in the PR):
-   - Update `.context/milestones/INDEX.md` (counts, status)
+   - Update `.context/milestones/INDEX.md` (counts, change status to `**Closed**`)
    - Update `.context/milestones/stories/story-{N}-*.md` (mark tasks complete, add notes)
    - These reflect the state *after* merge, so update them before creating the PR
 
@@ -127,18 +125,15 @@ When working on stories/issues, follow this process:
 
 7. **Open a PR** for human review
 
-8. **Move issue to In Review** - When the PR is ready for review:
-   ```bash
-   gh issue edit {issue-number} --add-label "in-review" --remove-label "in-progress"
-   ```
+8. **Move issue to "In review"** on the project board
 
-9. **After merge**, close the GitHub issue and remove `in-review` label
+9. **After merge**, close the GitHub issue (moves to "Done")
 
 10. **Unblock dependent stories** - Check if completing this story unblocks others:
-    ```bash
-    # Move newly unblocked stories from backlog to ready
-    gh issue edit {issue-number} --add-label "ready" --remove-label "backlog"
-    ```
+    - Move newly unblocked stories from "Backlog" to "Ready" on project board
+    - Update their local cache files accordingly
+
+See [CLAUDE.md](./CLAUDE.md) for detailed GraphQL commands for status changes.
 
 ## Documentation
 
