@@ -8,8 +8,8 @@
 |--------|-------|
 | Total Milestones | 5 |
 | Total Stories | 10 |
-| Open Stories | 7 |
-| Closed Stories | 3 |
+| Open Stories | 6 |
+| Closed Stories | 4 |
 
 ---
 
@@ -18,7 +18,7 @@
 | # | Milestone | Description | Stories | Progress |
 |---|-----------|-------------|---------|----------|
 | 1 | [Phase 2: PlantUML & Dependency Resolution](./milestone-1-plantuml-dependency.md) | Parse PlantUML, determine ready work items | 2 | 2/2 |
-| 2 | [Phase 3: GitHub Integration](./milestone-2-github-integration.md) | Sync with GitHub Issues via Octokit | 2 | 0/2 |
+| 2 | [Phase 3: GitHub Integration](./milestone-2-github-integration.md) | Sync with GitHub Issues via Octokit | 2 | 1/2 |
 | 3 | [Phase 4: Azure OpenAI Integration](./milestone-3-azure-openai.md) | AI-powered work execution | 2 | 0/2 |
 | 4 | [Phase 5: Orchestrator Service](./milestone-4-orchestrator-service.md) | Background service, state machine | 2 | 0/2 |
 | 5 | [Phase 6: Git Integration](./milestone-5-git-integration.md) | Auto-commit completed work | 1 | 0/1 |
@@ -44,7 +44,7 @@
 
 | # | Title | Status | Labels |
 |---|-------|--------|--------|
-| [#10](./stories/story-10-github-worksource.md) | Implement GitHubWorkSource with Octokit | Open | `story`, `phase-3` |
+| [#10](./stories/story-10-github-worksource.md) | Implement GitHubWorkSource with Octokit | **Closed** | `story`, `phase-3` |
 | [#11](./stories/story-11-sync-service.md) | Implement SyncService for bidirectional sync | Open | `story`, `phase-3` |
 
 ### Phase 4: Azure OpenAI Integration
