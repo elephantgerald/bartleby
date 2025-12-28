@@ -1,5 +1,7 @@
 # Claude Code Context for Bartleby
 
+**GitHub Repository**: https://github.com/elephantgerald/bartleby
+
 ## Project Overview
 
 Bartleby is an autonomous task orchestrator built with .NET 10 MAUI. It syncs work items from GitHub Issues, tracks dependencies in PlantUML, and uses Azure OpenAI to automatically work on tasks.

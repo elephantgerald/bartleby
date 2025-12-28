@@ -48,7 +48,7 @@ bartleby/
 
 ```bash
 # Clone and build
-git clone <repo-url>
+git clone https://github.com/elephantgerald/bartleby.git
 cd bartleby
 dotnet build
 

@@ -72,7 +72,7 @@ Standard Git installation. The project will eventually include auto-commit featu
 ### Clone and Restore
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/elephantgerald/bartleby.git
 cd bartleby
 dotnet restore
 ```
