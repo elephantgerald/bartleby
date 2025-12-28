@@ -100,7 +100,7 @@ On first run, go to **Settings** and configure:
 
 When working on stories/issues, follow this process:
 
-1. **Create a branch** from `master` using lowercase kebab-case:
+1. **Create a branch** from `main` using lowercase kebab-case:
    ```bash
    git checkout -b {issue-number}-{title-in-kebab-case}
    # Example: git checkout -b 7-set-up-test-infrastructure

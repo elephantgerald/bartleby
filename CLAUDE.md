@@ -77,7 +77,7 @@ dotnet test
 
 **IMPORTANT:** Follow this order when completing work:
 
-1. **Create branch** - Branch from `master` using ticket number + title in lowercase kebab-case
+1. **Create branch** - Branch from `main` using ticket number + title in lowercase kebab-case
    - Format: `{issue-number}-{lowercase-kebab-title}`
    - Example: `7-set-up-test-infrastructure`
 2. **Implement** - Write the code/tests

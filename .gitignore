@@ -107,3 +107,6 @@ BenchmarkDotNet.Artifacts/
 *.p12
 appsettings.local.json
 secrets.json
+
+# Claude Code
+.claude/settings.local.json

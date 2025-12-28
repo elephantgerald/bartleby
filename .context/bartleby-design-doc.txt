@@ -1,0 +1,213 @@
+Absolutely — here’s a clean, self‑contained **Markdown project brief** you can hand directly to Claude Code. It captures the architecture, metaphors, UI, and intent of Bartleby without assuming any prior conversation.
+
+You can copy/paste this whole thing as‑is.
+
+---
+
+# **Bartleby: The Registrar’s Desk**  
+*A narrative‑driven autonomous transformation orchestrator*
+
+## **Overview**
+Bartleby is a desktop companion built in C# (.NET MAUI + background worker) whose purpose is to quietly process a project’s backlog of tasks (initially GitHub issues) through a series of AI‑powered transformations. He is not a chatbot — he is a **scrivener‑agent** who works in the background, tending a single project at a time from his metaphorical workspace: **the Registrar’s Desk**.
+
+Bartleby’s identity is shaped by three guiding principles:
+
+- **Provenance** — every task has a lineage and history  
+- **Parsimony** — everything in its proper place, nothing extraneous  
+- **Canon** — Bartleby maintains the authoritative version of each transformation  
+
+The UI and system architecture reflect these values.
+
+---
+
+# **Core Concepts**
+
+## **1. Tasks**
+The atomic unit of work.  
+Tasks originate from GitHub (or future sources) and contain:
+
+- description  
+- context  
+- constraints  
+- project association  
+- transformation history  
+- current state  
+
+## **2. Transformations**
+Bartleby performs structured transformations on tasks:
+
+- interpret  
+- plan  
+- execute  
+- refine  
+- ask clarifying questions  
+- finalize  
+
+Each transformation is logged with provenance.
+
+## **3. Constraints**
+Bartleby works within:
+
+- token budgets  
+- schedules  
+- project priorities  
+- daily/monthly caps  
+- developer responses  
+
+## **4. States (The Funnel)**
+Tasks move through a canonical workflow:
+
+- **To Do**  
+- **In Progress**  
+- **Blocked / Needs Input**  
+- **Completed**  
+
+This is the “funnel” or “ledger flow.”
+
+---
+
+# **Narrative Metaphor: The Registrar’s Desk**
+
+Bartleby’s world is modeled after a historical **ledger desk** — the kind used by registrars, archivists, and clerks responsible for maintaining canonical records.
+
+Key metaphors:
+
+- **The Ledger Desk** — the active workspace  
+- **The Ledger Drawer** — a slide‑out project switcher containing all known projects  
+- **The Open Ledger** — the currently active project  
+- **The Registrar’s Journal** — the log of Bartleby’s actions  
+- **The Ink Bottle** — token budgets  
+- **The Funnel Folios** — task states  
+
+When Bartleby starts up, he automatically opens the **last ledger left on the desk**, resuming the previous project.
+
+---
+
+# **UI Structure**
+
+The app uses a VS Code–style vertical sidebar with the following tabs:
+
+### **📁 Ledger Drawer (Project Switcher)**
+- A slide‑out panel listing all configured projects  
+- Each project represented as a “ledger” with metadata  
+- Selecting a project loads it as the active ledger  
+- Only one project is active at a time  
+
+### **🏠 Dashboard (The Desk Surface)**
+Shows the heartbeat of the active project:
+
+- Bartleby’s current activity  
+- next scheduled run  
+- token usage summary  
+- project focus  
+- recent actions  
+
+### **📋 Work Funnel (The Open Ledger)**
+A Kanban‑style view of the task states:
+
+- To Do  
+- In Progress  
+- Blocked  
+- Completed  
+
+### **⏱️ Schedules (The Clock)**
+Controls when Bartleby works:
+
+- run interval  
+- burst mode  
+- quiet hours  
+- next run time  
+
+### **🪙 Token Budgets (The Ink Bottle)**
+Controls resource usage:
+
+- global monthly cap  
+- per‑project caps  
+- per‑task ceilings  
+- model selection  
+
+### **📜 Logs (The Registrar’s Journal)**
+A chronological record of:
+
+- transformations  
+- questions asked  
+- errors  
+- GitHub updates  
+- narrative commentary  
+
+### **⚙️ Settings (The Drawer of Tools)**
+Contains:
+
+- API keys (GitHub, Azure OpenAI)  
+- project configuration  
+- behavior tuning  
+- storage settings  
+
+---
+
+# **Technical Architecture**
+
+## **Platform**
+- .NET MAUI desktop app  
+- Background worker loop  
+- Local storage for project state  
+- Azure OpenAI for model inference  
+
+## **Worker Loop**
+Runs on a schedule:
+
+1. Load active project  
+2. Pull tasks from GitHub  
+3. Move tasks through transformations  
+4. Ask clarifying questions when needed  
+5. Update GitHub or local state  
+6. Log all actions  
+
+## **Model Provider**
+- Azure OpenAI (GPT‑5.x family)  
+- Chosen for:
+  - C# integration  
+  - cost efficiency  
+  - strong reasoning  
+  - predictable token usage  
+
+---
+
+# **Design Philosophy**
+
+Bartleby is:
+
+- **a registrar**, not a chatbot  
+- **a scrivener**, not a general AI  
+- **a transformation orchestrator**, not a task runner  
+- **a companion**, not a daemon  
+
+His world is built around:
+
+- clarity  
+- order  
+- narrative continuity  
+- quiet competence  
+
+The UI is not a dashboard — it is a **workspace**.
+
+---
+
+# **Future Extensions**
+
+- Additional task sources (Notion, Jira, local files)  
+- Multi‑model support  
+- Project archiving  
+- Custom transformation pipelines  
+- Developer responses integrated into the funnel  
+
+---
+
+If you want, I can also generate:
+
+- a version formatted as a README  
+- a version structured as a technical spec  
+- a version optimized for Claude’s “project context” window  
+- or a version with diagrams (ASCII or Mermaid)
+
+Just tell me which form you want next.
