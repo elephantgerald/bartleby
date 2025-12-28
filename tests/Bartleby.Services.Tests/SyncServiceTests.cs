@@ -180,8 +180,8 @@ public class SyncServiceTests
     {
         // Arrange
         var localId = Guid.NewGuid();
-        var localItem = CreateWorkItem(id: localId, externalId: "1", source: "TestSource");
-        var remoteItem = CreateWorkItem(externalId: "1", source: "TestSource");
+        var localItem = CreateWorkItem(id: localId, externalId: "1", source: "TestSource", title: "Old Title");
+        var remoteItem = CreateWorkItem(externalId: "1", source: "TestSource", title: "New Title");
 
         _workSourceMock.Setup(w => w.SyncAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync([remoteItem]);
@@ -205,14 +205,15 @@ public class SyncServiceTests
     public async Task SyncAsync_WithMatchingLocalItem_PreservesLocalOnlyFields()
     {
         // Arrange
-        var localItem = CreateWorkItem(externalId: "1", source: "TestSource");
+        var localItem = CreateWorkItem(externalId: "1", source: "TestSource", title: "Old Title");
         localItem.LastWorkedAt = DateTime.UtcNow.AddHours(-1);
         localItem.AttemptCount = 3;
         localItem.BranchName = "feature/test";
         localItem.ErrorMessage = "Previous error";
         localItem.Dependencies = [Guid.NewGuid()];
 
-        var remoteItem = CreateWorkItem(externalId: "1", source: "TestSource");
+        // Remote has different title to trigger update
+        var remoteItem = CreateWorkItem(externalId: "1", source: "TestSource", title: "New Title");
 
         _workSourceMock.Setup(w => w.SyncAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync([remoteItem]);
@@ -323,9 +324,9 @@ public class SyncServiceTests
     [Fact]
     public async Task SyncAsync_LocalItemWithDifferentStatus_PreservesLocalStatus()
     {
-        // Arrange
-        var localItem = CreateWorkItem(externalId: "1", source: "TestSource", status: WorkItemStatus.InProgress);
-        var remoteItem = CreateWorkItem(externalId: "1", source: "TestSource", status: WorkItemStatus.Pending);
+        // Arrange: Remote has different title to trigger update, and different status
+        var localItem = CreateWorkItem(externalId: "1", source: "TestSource", title: "Old Title", status: WorkItemStatus.InProgress);
+        var remoteItem = CreateWorkItem(externalId: "1", source: "TestSource", title: "New Title", status: WorkItemStatus.Pending);
 
         _workSourceMock.Setup(w => w.SyncAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync([remoteItem]);
@@ -511,8 +512,9 @@ public class SyncServiceTests
         var events = new List<ItemSyncedEventArgs>();
         _syncService.ItemSynced += (_, args) => events.Add(args);
 
-        var localItem = CreateWorkItem(externalId: "1", source: "TestSource");
-        var remoteItem = CreateWorkItem(externalId: "1", source: "TestSource");
+        // Remote has different title to trigger update
+        var localItem = CreateWorkItem(externalId: "1", source: "TestSource", title: "Old Title");
+        var remoteItem = CreateWorkItem(externalId: "1", source: "TestSource", title: "New Title");
 
         _workSourceMock.Setup(w => w.SyncAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync([remoteItem]);
@@ -759,6 +761,283 @@ public class SyncServiceTests
 
         // Assert
         result.Duration.Should().BeGreaterThan(TimeSpan.FromMilliseconds(40));
+    }
+
+    #endregion
+
+    #region SyncAsync - No-Op Detection (Fix #3)
+
+    [Fact]
+    public async Task SyncAsync_WhenContentUnchanged_DoesNotCallUpdate()
+    {
+        // Arrange: Local and remote have identical content
+        var localItem = CreateWorkItem(externalId: "1", source: "TestSource", title: "Same Title");
+        localItem.Description = "Same Description";
+        localItem.Labels = ["label1", "label2"];
+
+        var remoteItem = CreateWorkItem(externalId: "1", source: "TestSource", title: "Same Title");
+        remoteItem.Description = "Same Description";
+        remoteItem.Labels = ["label1", "label2"];
+
+        _workSourceMock.Setup(w => w.SyncAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([remoteItem]);
+
+        _workItemRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([localItem]);
+
+        // Act
+        var result = await _syncService.SyncAsync();
+
+        // Assert: No update should be called since content is identical
+        result.Success.Should().BeTrue();
+        result.ItemsUpdated.Should().Be(0);
+
+        _workItemRepositoryMock.Verify(
+            r => r.UpdateAsync(It.IsAny<WorkItem>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task SyncAsync_WhenLabelsChangedInDifferentOrder_DoesNotCallUpdate()
+    {
+        // Arrange: Same labels but different order should not trigger update
+        var localItem = CreateWorkItem(externalId: "1", source: "TestSource", title: "Title");
+        localItem.Labels = ["alpha", "beta", "gamma"];
+
+        var remoteItem = CreateWorkItem(externalId: "1", source: "TestSource", title: "Title");
+        remoteItem.Labels = ["gamma", "alpha", "beta"]; // Same labels, different order
+
+        _workSourceMock.Setup(w => w.SyncAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([remoteItem]);
+
+        _workItemRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([localItem]);
+
+        // Act
+        var result = await _syncService.SyncAsync();
+
+        // Assert: No update since labels are the same (order-insensitive)
+        result.ItemsUpdated.Should().Be(0);
+
+        _workItemRepositoryMock.Verify(
+            r => r.UpdateAsync(It.IsAny<WorkItem>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task SyncAsync_WhenLabelsActuallyChange_TriggersUpdate()
+    {
+        // Arrange: Labels are different
+        var localItem = CreateWorkItem(externalId: "1", source: "TestSource", title: "Title");
+        localItem.Labels = ["alpha", "beta"];
+
+        var remoteItem = CreateWorkItem(externalId: "1", source: "TestSource", title: "Title");
+        remoteItem.Labels = ["alpha", "gamma"]; // Different label
+
+        _workSourceMock.Setup(w => w.SyncAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([remoteItem]);
+
+        _workItemRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([localItem]);
+
+        _workItemRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<WorkItem>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((WorkItem item, CancellationToken _) => item);
+
+        // Act
+        var result = await _syncService.SyncAsync();
+
+        // Assert
+        result.ItemsUpdated.Should().Be(1);
+
+        _workItemRepositoryMock.Verify(
+            r => r.UpdateAsync(It.IsAny<WorkItem>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    #endregion
+
+    #region SyncAsync - Duplicate ExternalId Handling (Fix #2)
+
+    [Fact]
+    public async Task SyncAsync_WithDuplicateLocalExternalIds_UsesNewestItem()
+    {
+        // Arrange: Two local items with the same ExternalId (shouldn't happen, but handle gracefully)
+        var olderItem = CreateWorkItem(externalId: "1", source: "TestSource", title: "Old Duplicate");
+        olderItem.UpdatedAt = DateTime.UtcNow.AddDays(-1);
+
+        var newerItem = CreateWorkItem(externalId: "1", source: "TestSource", title: "New Duplicate");
+        newerItem.UpdatedAt = DateTime.UtcNow;
+
+        var remoteItem = CreateWorkItem(externalId: "1", source: "TestSource", title: "Remote Title");
+
+        _workSourceMock.Setup(w => w.SyncAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([remoteItem]);
+
+        // Return both duplicates (older first to ensure we're not just picking the first one)
+        _workItemRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([olderItem, newerItem]);
+
+        _workItemRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<WorkItem>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((WorkItem item, CancellationToken _) => item);
+
+        // Act
+        var result = await _syncService.SyncAsync();
+
+        // Assert: Should update the newer item (most recently updated)
+        result.Success.Should().BeTrue();
+
+        _workItemRepositoryMock.Verify(
+            r => r.UpdateAsync(It.Is<WorkItem>(w => w.Id == newerItem.Id), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    #endregion
+
+    #region SyncAsync - Per-Item Error Handling (Fix #7)
+
+    [Fact]
+    public async Task SyncAsync_WhenSingleItemFails_ContinuesSyncingOtherItems()
+    {
+        // Arrange
+        var item1 = CreateWorkItem(externalId: "1", source: "TestSource", title: "Item 1");
+        var item2 = CreateWorkItem(externalId: "2", source: "TestSource", title: "Item 2");
+        var item3 = CreateWorkItem(externalId: "3", source: "TestSource", title: "Item 3");
+
+        _workSourceMock.Setup(w => w.SyncAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([item1, item2, item3]);
+
+        _workItemRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        // First item succeeds, second fails, third succeeds
+        var callCount = 0;
+        _workItemRepositoryMock.Setup(r => r.CreateAsync(It.IsAny<WorkItem>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((WorkItem item, CancellationToken _) =>
+            {
+                callCount++;
+                if (item.ExternalId == "2")
+                {
+                    throw new Exception("Database error");
+                }
+                return item;
+            });
+
+        // Act
+        var result = await _syncService.SyncAsync();
+
+        // Assert: Sync completes with partial success
+        result.Success.Should().BeTrue();
+        result.ItemsAdded.Should().Be(2); // Items 1 and 3 succeeded
+        result.ErrorMessage.Should().Contain("1 error");
+        result.ErrorMessage.Should().Contain("Database error");
+
+        // Verify all three items were attempted
+        _workItemRepositoryMock.Verify(
+            r => r.CreateAsync(It.IsAny<WorkItem>(), It.IsAny<CancellationToken>()),
+            Times.Exactly(3));
+    }
+
+    [Fact]
+    public async Task SyncAsync_WhenStatusPushFails_ContinuesWithOtherItems()
+    {
+        // Arrange
+        var localItem1 = CreateWorkItem(externalId: "1", source: "TestSource", status: WorkItemStatus.InProgress);
+        var localItem2 = CreateWorkItem(externalId: "2", source: "TestSource", status: WorkItemStatus.Complete);
+
+        var remoteItem1 = CreateWorkItem(externalId: "1", source: "TestSource", title: "New Title 1", status: WorkItemStatus.Pending);
+        var remoteItem2 = CreateWorkItem(externalId: "2", source: "TestSource", title: "New Title 2", status: WorkItemStatus.Pending);
+
+        _workSourceMock.Setup(w => w.SyncAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([remoteItem1, remoteItem2]);
+
+        _workItemRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([localItem1, localItem2]);
+
+        _workItemRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<WorkItem>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((WorkItem item, CancellationToken _) => item);
+
+        // First status push fails, second succeeds
+        _workSourceMock.SetupSequence(w => w.UpdateStatusAsync(It.IsAny<WorkItem>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("API rate limited"))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _syncService.SyncAsync();
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.StatusesPushed.Should().Be(1); // Only second one succeeded
+        result.ErrorMessage.Should().Contain("1 error");
+        result.ErrorMessage.Should().Contain("API rate limited");
+    }
+
+    #endregion
+
+    #region SyncAsync - Collection Copying (Fix #4)
+
+    [Fact]
+    public async Task SyncAsync_MergedItem_HasIndependentLabelsList()
+    {
+        // Arrange
+        var localItem = CreateWorkItem(externalId: "1", source: "TestSource", title: "Old");
+        localItem.Labels = ["original"];
+
+        var remoteItem = CreateWorkItem(externalId: "1", source: "TestSource", title: "New");
+        remoteItem.Labels = ["remote"];
+
+        _workSourceMock.Setup(w => w.SyncAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([remoteItem]);
+
+        _workItemRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([localItem]);
+
+        WorkItem? capturedItem = null;
+        _workItemRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<WorkItem>(), It.IsAny<CancellationToken>()))
+            .Callback<WorkItem, CancellationToken>((item, _) => capturedItem = item)
+            .ReturnsAsync((WorkItem item, CancellationToken _) => item);
+
+        // Act
+        await _syncService.SyncAsync();
+
+        // Assert: Modifying the merged item's labels should not affect the remote item
+        capturedItem.Should().NotBeNull();
+        capturedItem!.Labels.Add("modified");
+
+        remoteItem.Labels.Should().NotContain("modified");
+        remoteItem.Labels.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task SyncAsync_MergedItem_HasIndependentDependenciesList()
+    {
+        // Arrange
+        var depId = Guid.NewGuid();
+        var localItem = CreateWorkItem(externalId: "1", source: "TestSource", title: "Old");
+        localItem.Dependencies = [depId];
+
+        var remoteItem = CreateWorkItem(externalId: "1", source: "TestSource", title: "New");
+
+        _workSourceMock.Setup(w => w.SyncAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([remoteItem]);
+
+        _workItemRepositoryMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([localItem]);
+
+        WorkItem? capturedItem = null;
+        _workItemRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<WorkItem>(), It.IsAny<CancellationToken>()))
+            .Callback<WorkItem, CancellationToken>((item, _) => capturedItem = item)
+            .ReturnsAsync((WorkItem item, CancellationToken _) => item);
+
+        // Act
+        await _syncService.SyncAsync();
+
+        // Assert: Modifying the merged item's dependencies should not affect the local item
+        capturedItem.Should().NotBeNull();
+        var newDepId = Guid.NewGuid();
+        capturedItem!.Dependencies.Add(newDepId);
+
+        localItem.Dependencies.Should().NotContain(newDepId);
+        localItem.Dependencies.Should().HaveCount(1);
     }
 
     #endregion

@@ -101,24 +101,27 @@ public class SyncService : ISyncService
         int itemsUpdated = 0;
         int itemsRemoved = 0;
         int statusesPushed = 0;
+        var errors = new List<string>();
 
-        // Step 1: Fetch items from the source
-        var remoteItems = (await _workSource.SyncAsync(cancellationToken)).ToList();
+        // Step 1: Fetch items from the source (with null guard - Fix #1)
+        var remoteItems = ((await _workSource.SyncAsync(cancellationToken)) ?? []).ToList();
 
-        // Step 2: Get all local items for this source
-        var localItems = (await _workItemRepository.GetAllAsync(cancellationToken))
+        // Step 2: Get all local items for this source (with null guard - Fix #1)
+        var localItems = ((await _workItemRepository.GetAllAsync(cancellationToken)) ?? [])
             .Where(w => w.Source == _workSource.Name)
             .ToList();
 
-        // Build lookup by ExternalId for local items
+        // Build lookup by ExternalId for local items (handling duplicates - Fix #2)
+        // If duplicates exist, prefer the most recently updated item
         var localByExternalId = localItems
             .Where(w => !string.IsNullOrEmpty(w.ExternalId))
-            .ToDictionary(w => w.ExternalId!, w => w);
+            .GroupBy(w => w.ExternalId!)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.UpdatedAt).First());
 
         // Track which local items have been matched to remote items
         var matchedLocalIds = new HashSet<Guid>();
 
-        // Step 3: Process remote items (add/update)
+        // Step 3: Process remote items (add/update) with per-item error handling (Fix #7)
         foreach (var remoteItem in remoteItems)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -128,54 +131,72 @@ public class SyncService : ISyncService
                 continue; // Skip items without external ID
             }
 
-            if (localByExternalId.TryGetValue(remoteItem.ExternalId, out var localItem))
+            try
             {
-                // Item exists locally - check for status difference and update
-                matchedLocalIds.Add(localItem.Id);
-
-                var statusDiffers = localItem.Status != remoteItem.Status;
-                var needsStatusPush = statusDiffers && ShouldPushLocalStatus(localItem.Status);
-
-                // Update local item with remote data, preserving local status if it should be pushed
-                var updated = MergeRemoteIntoLocal(localItem, remoteItem, preserveLocalStatus: needsStatusPush);
-
-                await _workItemRepository.UpdateAsync(updated, cancellationToken);
-                itemsUpdated++;
-
-                ItemSynced?.Invoke(this, new ItemSyncedEventArgs
+                if (localByExternalId.TryGetValue(remoteItem.ExternalId, out var localItem))
                 {
-                    WorkItem = updated,
-                    Action = SyncAction.Updated
-                });
+                    // Item exists locally - check for status difference and update
+                    matchedLocalIds.Add(localItem.Id);
 
-                // Push local status if it differs
-                if (needsStatusPush)
+                    var statusDiffers = localItem.Status != remoteItem.Status;
+                    var needsStatusPush = statusDiffers && ShouldPushLocalStatus(localItem.Status);
+
+                    // Update local item with remote data, preserving local status if it should be pushed
+                    var updated = MergeRemoteIntoLocal(localItem, remoteItem, preserveLocalStatus: needsStatusPush);
+
+                    // Only update if something actually changed (Fix #3 - no-op detection)
+                    if (HasContentChanged(localItem, updated))
+                    {
+                        await _workItemRepository.UpdateAsync(updated, cancellationToken);
+                        itemsUpdated++;
+
+                        ItemSynced?.Invoke(this, new ItemSyncedEventArgs
+                        {
+                            WorkItem = updated,
+                            Action = SyncAction.Updated
+                        });
+                    }
+
+                    // Push local status if it differs
+                    if (needsStatusPush)
+                    {
+                        try
+                        {
+                            await _workSource.UpdateStatusAsync(updated, cancellationToken);
+                            statusesPushed++;
+
+                            ItemSynced?.Invoke(this, new ItemSyncedEventArgs
+                            {
+                                WorkItem = updated,
+                                Action = SyncAction.StatusPushed
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            errors.Add($"Failed to push status for '{updated.Title}': {ex.Message}");
+                        }
+                    }
+                }
+                else
                 {
-                    await _workSource.UpdateStatusAsync(updated, cancellationToken);
-                    statusesPushed++;
+                    // New item from remote - create locally
+                    var created = await _workItemRepository.CreateAsync(remoteItem, cancellationToken);
+                    itemsAdded++;
 
                     ItemSynced?.Invoke(this, new ItemSyncedEventArgs
                     {
-                        WorkItem = updated,
-                        Action = SyncAction.StatusPushed
+                        WorkItem = created,
+                        Action = SyncAction.Added
                     });
                 }
             }
-            else
+            catch (Exception ex)
             {
-                // New item from remote - create locally
-                var created = await _workItemRepository.CreateAsync(remoteItem, cancellationToken);
-                itemsAdded++;
-
-                ItemSynced?.Invoke(this, new ItemSyncedEventArgs
-                {
-                    WorkItem = created,
-                    Action = SyncAction.Added
-                });
+                errors.Add($"Failed to sync item '{remoteItem.Title}' (ExternalId: {remoteItem.ExternalId}): {ex.Message}");
             }
         }
 
-        // Step 4: Remove local items that no longer exist in remote
+        // Step 4: Remove local items that no longer exist in remote (with per-item error handling - Fix #7)
         var remoteExternalIds = remoteItems
             .Where(r => !string.IsNullOrEmpty(r.ExternalId))
             .Select(r => r.ExternalId!)
@@ -189,15 +210,42 @@ public class SyncService : ISyncService
                 !string.IsNullOrEmpty(localItem.ExternalId) &&
                 !remoteExternalIds.Contains(localItem.ExternalId))
             {
-                await _workItemRepository.DeleteAsync(localItem.Id, cancellationToken);
-                itemsRemoved++;
-
-                ItemSynced?.Invoke(this, new ItemSyncedEventArgs
+                try
                 {
-                    WorkItem = localItem,
-                    Action = SyncAction.Removed
-                });
+                    await _workItemRepository.DeleteAsync(localItem.Id, cancellationToken);
+                    itemsRemoved++;
+
+                    ItemSynced?.Invoke(this, new ItemSyncedEventArgs
+                    {
+                        WorkItem = localItem,
+                        Action = SyncAction.Removed
+                    });
+                }
+                catch (Exception ex)
+                {
+                    errors.Add($"Failed to remove item '{localItem.Title}': {ex.Message}");
+                }
             }
+        }
+
+        // Return result with partial failure info if any errors occurred
+        if (errors.Count > 0)
+        {
+            var errorSummary = $"Sync completed with {errors.Count} error(s): {string.Join("; ", errors.Take(3))}";
+            if (errors.Count > 3)
+            {
+                errorSummary += $" ... and {errors.Count - 3} more";
+            }
+            return new SyncResult
+            {
+                Success = true, // Partial success - main sync completed
+                ItemsAdded = itemsAdded,
+                ItemsUpdated = itemsUpdated,
+                ItemsRemoved = itemsRemoved,
+                StatusesPushed = statusesPushed,
+                ErrorMessage = errorSummary,
+                Duration = TimeSpan.Zero
+            };
         }
 
         return SyncResult.Successful(itemsAdded, itemsUpdated, itemsRemoved, statusesPushed, TimeSpan.Zero);
@@ -244,13 +292,14 @@ public class SyncService : ISyncService
             ExternalId = remote.ExternalId,
             Source = remote.Source,
             ExternalUrl = remote.ExternalUrl,
-            Labels = remote.Labels,
+            // Copy collections to avoid shared mutable state (Fix #4)
+            Labels = remote.Labels?.ToList() ?? [],
 
             // Preserve or take status based on conflict resolution
             Status = preserveLocalStatus ? local.Status : remote.Status,
 
-            // Preserve local-only fields
-            Dependencies = local.Dependencies,
+            // Preserve local-only fields - copy collections to avoid shared mutable state (Fix #4)
+            Dependencies = local.Dependencies?.ToList() ?? [],
             CreatedAt = local.CreatedAt,
             LastWorkedAt = local.LastWorkedAt,
             AttemptCount = local.AttemptCount,
@@ -260,5 +309,30 @@ public class SyncService : ISyncService
             // Update timestamp
             UpdatedAt = DateTime.UtcNow
         };
+    }
+
+    /// <summary>
+    /// Determines whether content has changed between two work items. (Fix #3 - no-op detection)
+    /// </summary>
+    /// <remarks>
+    /// Compares fields that come from the remote source (title, description, labels, URL)
+    /// and status when applicable. Local-only fields are not compared since they don't
+    /// trigger an update need.
+    /// </remarks>
+    private static bool HasContentChanged(WorkItem original, WorkItem updated)
+    {
+        // Compare content fields that come from remote
+        if (original.Title != updated.Title) return true;
+        if (original.Description != updated.Description) return true;
+        if (original.ExternalUrl != updated.ExternalUrl) return true;
+        if (original.Status != updated.Status) return true;
+
+        // Compare labels (order-insensitive)
+        var originalLabels = original.Labels ?? [];
+        var updatedLabels = updated.Labels ?? [];
+        if (originalLabels.Count != updatedLabels.Count) return true;
+        if (!originalLabels.OrderBy(l => l).SequenceEqual(updatedLabels.OrderBy(l => l))) return true;
+
+        return false;
     }
 }
