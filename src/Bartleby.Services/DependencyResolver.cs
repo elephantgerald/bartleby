@@ -119,70 +119,113 @@ public class DependencyResolver : IDependencyResolver
     }
 
     /// <summary>
-    /// Detects cycles in the dependency graph using DFS back-edge detection.
+    /// Detects cycles in the dependency graph using Tarjan's strongly connected components algorithm.
     /// </summary>
     /// <remarks>
-    /// This is a simple DFS-based cycle detector that finds back-edges.
-    /// It may report duplicate cycles or cycles that are rotations of each other.
-    /// For more precise strongly-connected-component detection, consider Tarjan's algorithm.
+    /// <para>
+    /// Tarjan's algorithm finds all strongly connected components (SCCs) in O(V+E) time.
+    /// An SCC is a maximal set of nodes where every node is reachable from every other node.
+    /// </para>
+    /// <para>
+    /// A cycle exists when an SCC has more than one node, or when a single node has a self-loop.
+    /// This implementation returns only the SCCs that represent cycles.
+    /// </para>
     /// </remarks>
     private static List<IReadOnlyList<Guid>> DetectCycles(DependencyGraph graph)
     {
-        var cycles = new List<IReadOnlyList<Guid>>();
-        var visited = new HashSet<Guid>();
-        var recursionStack = new HashSet<Guid>();
-        var path = new List<Guid>();
+        var state = new TarjanState();
 
         foreach (var nodeId in graph.Nodes.Keys)
         {
-            if (!visited.Contains(nodeId))
+            if (!state.Index.ContainsKey(nodeId))
             {
-                DetectCyclesDfs(graph, nodeId, visited, recursionStack, path, cycles);
+                TarjanStrongConnect(graph, nodeId, state);
             }
         }
 
-        return cycles;
+        return state.Cycles;
     }
 
     /// <summary>
-    /// DFS helper for cycle detection.
+    /// State object for Tarjan's algorithm.
     /// </summary>
-    private static void DetectCyclesDfs(
-        DependencyGraph graph,
-        Guid nodeId,
-        HashSet<Guid> visited,
-        HashSet<Guid> recursionStack,
-        List<Guid> path,
-        List<IReadOnlyList<Guid>> cycles)
+    private sealed class TarjanState
     {
-        visited.Add(nodeId);
-        recursionStack.Add(nodeId);
-        path.Add(nodeId);
+        public int CurrentIndex { get; set; }
+        public Dictionary<Guid, int> Index { get; } = [];
+        public Dictionary<Guid, int> LowLink { get; } = [];
+        public HashSet<Guid> OnStack { get; } = [];
+        public Stack<Guid> Stack { get; } = new();
+        public List<IReadOnlyList<Guid>> Cycles { get; } = [];
+    }
 
+    /// <summary>
+    /// Tarjan's strongconnect function - the core of the SCC algorithm.
+    /// </summary>
+    private static void TarjanStrongConnect(DependencyGraph graph, Guid nodeId, TarjanState state)
+    {
+        // Set the depth index for this node to the smallest unused index
+        state.Index[nodeId] = state.CurrentIndex;
+        state.LowLink[nodeId] = state.CurrentIndex;
+        state.CurrentIndex++;
+        state.Stack.Push(nodeId);
+        state.OnStack.Add(nodeId);
+
+        // Consider successors (dependencies)
         if (graph.Nodes.TryGetValue(nodeId, out var node))
         {
             foreach (var depId in node.DependsOn)
             {
-                if (!visited.Contains(depId))
+                // Only process nodes that exist in the graph
+                if (!graph.Nodes.ContainsKey(depId))
                 {
-                    DetectCyclesDfs(graph, depId, visited, recursionStack, path, cycles);
+                    continue;
                 }
-                else if (recursionStack.Contains(depId))
+
+                if (!state.Index.ContainsKey(depId))
                 {
-                    // Found a cycle - extract it from the path
-                    var cycleStart = path.IndexOf(depId);
-                    if (cycleStart >= 0)
-                    {
-                        var cycle = path.Skip(cycleStart).ToList();
-                        cycle.Add(depId); // Close the cycle
-                        cycles.Add(cycle);
-                    }
+                    // Successor has not yet been visited; recurse on it
+                    TarjanStrongConnect(graph, depId, state);
+                    state.LowLink[nodeId] = Math.Min(state.LowLink[nodeId], state.LowLink[depId]);
+                }
+                else if (state.OnStack.Contains(depId))
+                {
+                    // Successor is in stack and hence in the current SCC
+                    state.LowLink[nodeId] = Math.Min(state.LowLink[nodeId], state.Index[depId]);
                 }
             }
         }
 
-        path.RemoveAt(path.Count - 1);
-        recursionStack.Remove(nodeId);
+        // If nodeId is a root node, pop the stack and generate an SCC
+        if (state.LowLink[nodeId] == state.Index[nodeId])
+        {
+            var scc = new List<Guid>();
+            Guid poppedId;
+
+            do
+            {
+                poppedId = state.Stack.Pop();
+                state.OnStack.Remove(poppedId);
+                scc.Add(poppedId);
+            } while (poppedId != nodeId);
+
+            // An SCC is a cycle if it has more than one node,
+            // or if a single node has a self-loop
+            var isCycle = scc.Count > 1 || HasSelfLoop(graph, scc[0]);
+
+            if (isCycle)
+            {
+                state.Cycles.Add(scc);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Checks if a node has a self-loop (depends on itself).
+    /// </summary>
+    private static bool HasSelfLoop(DependencyGraph graph, Guid nodeId)
+    {
+        return graph.Nodes.TryGetValue(nodeId, out var node) && node.DependsOn.Contains(nodeId);
     }
 
     /// <summary>
