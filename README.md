@@ -94,11 +94,11 @@ On first run, go to **Settings** and configure:
 
 ## Current Status
 
-**Phase 1 Complete** - Foundation skeleton is built and running.
+**Phase 3 Complete** - GitHub Integration is built and tested.
 
 ## Development Workflow
 
-When working on stories/issues, follow this process:
+When working on stories/issues, follow this process. Status changes update both the **GitHub Project board** (via GraphQL API) and **local cache** (`.context/milestones/`).
 
 1. **Create a branch** from `main` using lowercase kebab-case:
    ```bash
@@ -106,23 +106,34 @@ When working on stories/issues, follow this process:
    # Example: git checkout -b 7-set-up-test-infrastructure
    ```
 
-2. **Implement** the feature/fix
+2. **Move issue to "In progress"** on the project board and update local cache:
+   - Update `.context/milestones/stories/story-{N}-*.md`: Change `**State:** Open` to `**State:** In Progress`
 
-3. **Test** before committing:
+3. **Implement** the feature/fix
+
+4. **Test** before committing:
    ```bash
    dotnet test
    ```
 
-4. **Update cached docs** (include in the PR):
-   - Update `.context/milestones/INDEX.md` (counts, status)
+5. **Update cached docs** (include in the PR):
+   - Update `.context/milestones/INDEX.md` (counts, change status to `**Closed**`)
    - Update `.context/milestones/stories/story-{N}-*.md` (mark tasks complete, add notes)
    - These reflect the state *after* merge, so update them before creating the PR
 
-5. **Commit & Push** your changes
+6. **Commit & Push** your changes
 
-6. **Open a PR** for human review
+7. **Open a PR** for human review
 
-7. **After merge**, close the GitHub issue
+8. **Move issue to "In review"** on the project board
+
+9. **After merge**, close the GitHub issue (moves to "Done")
+
+10. **Unblock dependent stories** - Check if completing this story unblocks others:
+    - Move newly unblocked stories from "Backlog" to "Ready" on project board
+    - Update their local cache files accordingly
+
+See [CLAUDE.md](./CLAUDE.md) for detailed GraphQL commands for status changes.
 
 ## Documentation
 

@@ -47,7 +47,7 @@ dotnet build
 # Build and run Windows app
 dotnet run --project src/Bartleby.App -f net10.0-windows10.0.19041.0
 
-# Run tests (when implemented)
+# Run tests
 dotnet test
 ```
 
@@ -62,12 +62,13 @@ dotnet test
 - DI wired up
 - Test infrastructure (xUnit, FluentAssertions, Moq)
 - `PlantUmlParser` - Parse PlantUML to build dependency graph (59 tests)
+- `DependencyResolver` - Determine which work items are ready (30 tests)
+- `GitHubWorkSource` - GitHub integration using Octokit (42 tests)
+- `SyncService` - Bidirectional sync between GitHub and local store (35 tests)
 
 **Not Yet Implemented:**
-- `DependencyResolver` - Determine which work items are ready
-- `OrchestratorService` - Background service to pick up and execute work
-- `GitHubWorkSource` - Real GitHub integration using Octokit
 - `AzureOpenAIProvider` - Real AI integration
+- `OrchestratorService` - Background service to pick up and execute work
 - `GitService` - Auto-commit completed work
 
 ## Patterns & Conventions
@@ -79,39 +80,117 @@ dotnet test
 
 ## Workflow for Completing Stories
 
-**IMPORTANT:** Follow this order when completing work:
+**IMPORTANT:** Follow this order when completing work. Each step includes both GitHub Project board updates AND local cache updates.
 
-1. **Create branch** - Branch from `main` using ticket number + title in lowercase kebab-case
-   - Format: `{issue-number}-{lowercase-kebab-title}`
-   - Example: `7-set-up-test-infrastructure`
-2. **Implement** - Write the code/tests
-3. **Test together** - Run `dotnet test` and verify with the user
-4. **Update cached docs** - Update `.context/milestones/` files to reflect completed state
-   - Update `INDEX.md` counts and status (mark story as **Closed**)
-   - Update the story file (`.context/milestones/stories/story-{N}-*.md`)
-   - Mark all tasks/criteria as `[x]` completed
-   - Add implementation notes (files created, key details)
-   - Add PR link
-5. **Commit & Push** - Only after tests pass and user approves
-6. **Create PR** - Open a pull request for human review
-7. **After PR merged** - Close the GitHub issue
+### Step 1: Create Branch
+Branch from `main` using ticket number + title in lowercase kebab-case:
+- Format: `{issue-number}-{lowercase-kebab-title}`
+- Example: `7-set-up-test-infrastructure`
 
-**Rules:**
+### Step 2: Move Issue to "In Progress"
+Update both the project board and local cache:
+
+**Project Board:** Use the GraphQL mutation (see [Status Change Reference](#status-change-reference) below)
+
+**Local Cache:** Update `.context/milestones/stories/story-{N}-*.md`:
+- Change `**State:** Open` to `**State:** In Progress`
+
+### Step 3: Implement
+Write the code and tests.
+
+### Step 4: Test
+Run `dotnet test` and verify with the user.
+
+### Step 5: Update Cached Docs (for completed state)
+Update `.context/milestones/` files to reflect the completed state:
+- **INDEX.md**: Update counts, change story status to `**Closed**`
+- **Story file**: Change `**State:** In Progress` to `**State:** Closed`
+- Mark all tasks/criteria as `[x]` completed
+- Add implementation notes (files created, key details)
+
+### Step 6: Commit & Push
+Only after tests pass and user approves.
+
+### Step 7: Create PR
+Open a pull request for human review.
+
+### Step 8: Move Issue to "In Review"
+**Project Board:** Use the GraphQL mutation to change status to "In review"
+
+### Step 9: After PR Merged - Move to "Done"
+Close the GitHub issue (this may auto-move to Done, or use the mutation)
+
+### Step 10: Unblock Dependent Stories
+Check if completing this story unblocks others:
+- Review stories in "Backlog" that depended on this one
+- Move newly unblocked stories to "Ready" on project board
+- Update local cache `.context/milestones/stories/story-{N}-*.md` for unblocked stories
+
+---
+
+## Status Change Reference
+
+### Project IDs
+| Name | ID |
+|------|-----|
+| Bartleby Kanban | `PVT_kwHOAFRux84BLb0B` |
+| Status Field | `PVTSSF_lAHOAFRux84BLb0Bzg7Ammc` |
+
+### Status Option IDs
+| Status | Option ID |
+|--------|-----------|
+| Backlog | `f75ad846` |
+| Ready | `61e4505c` |
+| In progress | `47fc9ee4` |
+| In review | `df73e18b` |
+| Done | `98236657` |
+
+### Get Item ID for an Issue
+```bash
+gh api graphql -f query='{
+  repository(owner: "elephantgerald", name: "bartleby") {
+    issue(number: ISSUE_NUMBER) {
+      projectItems(first: 10) {
+        nodes { id }
+      }
+    }
+  }
+}'
+```
+
+### Change Issue Status
+Replace `ITEM_ID` with the item ID from above, and `OPTION_ID` with the desired status:
+```bash
+gh api graphql -f query='mutation {
+  updateProjectV2ItemFieldValue(
+    input: {
+      projectId: "PVT_kwHOAFRux84BLb0B"
+      itemId: "ITEM_ID"
+      fieldId: "PVTSSF_lAHOAFRux84BLb0Bzg7Ammc"
+      value: { singleSelectOptionId: "OPTION_ID" }
+    }
+  ) { projectV2Item { id } }
+}'
+```
+
+---
+
+## Rules
 - Do NOT close GitHub issues until the PR is merged
 - DO update cached docs (INDEX.md, story files) as part of the PR - they reflect the state *after* merge
 - Always wait for user approval before committing
+- Keep project board AND local cache in sync
 
-**Why update docs before merge?**
+## Why Update Docs Before Merge?
 The cached docs in `.context/milestones/` track the state of the codebase. When the PR merges, the story IS complete, so the docs should reflect that. Including doc updates in the PR keeps everything in sync.
 
 ## Next Steps (Priority Order)
 
-1. Implement `DependencyResolver` to determine ready work items (Story #9)
-2. Implement `GitHubWorkSource` with Octokit (Story #10)
-3. Implement `SyncService` for bidirectional sync (Story #11)
-4. Implement `AzureOpenAIProvider` with Azure.AI.OpenAI SDK (Story #12)
-5. Implement `OrchestratorService` as a background service (Story #14)
-6. Implement `GitService` with LibGit2Sharp (Story #16)
+1. Implement `AzureOpenAIProvider` with Azure.AI.OpenAI SDK (Story #12)
+2. Implement `WorkExecutor` with prompt templates (Story #13)
+3. Implement `OrchestratorService` as a background service (Story #14)
+4. Implement blocked work management (Story #15)
+5. Implement `GitService` with LibGit2Sharp (Story #16)
 
 ## Important Notes
 
