@@ -365,6 +365,27 @@ public class DependencyResolverTests
         result.Should().BeFalse();
     }
 
+    [Fact]
+    public async Task IsReadyAsync_ItemInCycle_ReturnsFalse()
+    {
+        // Arrange: A and B form a cycle (A -> B -> A)
+        var itemA = CreateWorkItem(status: WorkItemStatus.Pending);
+        var itemB = CreateWorkItem(status: WorkItemStatus.Pending);
+
+        var graph = CreateGraph(
+            [(itemA.Id, itemB.Id), (itemB.Id, itemA.Id)],
+            [itemA.Id, itemB.Id]);
+        SetupMocks(graph, [itemA, itemB]);
+
+        // Act
+        var resultA = await _resolver.IsReadyAsync(itemA.Id);
+        var resultB = await _resolver.IsReadyAsync(itemB.Id);
+
+        // Assert - both items in the cycle should return false
+        resultA.Should().BeFalse();
+        resultB.Should().BeFalse();
+    }
+
     #endregion
 
     #region DetectCircularDependenciesAsync
