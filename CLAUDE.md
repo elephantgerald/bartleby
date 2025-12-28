@@ -58,12 +58,14 @@ dotnet test
 - Stub implementations for work source and AI
 - MAUI app with Dashboard, Work Items, Blocked, Settings pages
 - DI wired up
+- Test infrastructure (xUnit, FluentAssertions, Moq)
+- `PlantUmlParser` - Parse PlantUML to build dependency graph (59 tests)
 
 **Not Yet Implemented:**
+- `DependencyResolver` - Determine which work items are ready
 - `OrchestratorService` - Background service to pick up and execute work
 - `GitHubWorkSource` - Real GitHub integration using Octokit
 - `AzureOpenAIProvider` - Real AI integration
-- `PlantUmlParser` - Parse PlantUML to build dependency graph
 - `GitService` - Auto-commit completed work
 
 ## Patterns & Conventions
@@ -82,22 +84,32 @@ dotnet test
    - Example: `7-set-up-test-infrastructure`
 2. **Implement** - Write the code/tests
 3. **Test together** - Run `dotnet test` and verify with the user
-4. **Commit & Push** - Only after tests pass and user approves
-5. **Create PR** - Open a pull request for human review
-6. **After PR merged** - Close the GitHub issue and update local tracking files
+4. **Update cached docs** - Update `.context/milestones/` files to reflect completed state
+   - Update `INDEX.md` counts and status (mark story as **Closed**)
+   - Update the story file (`.context/milestones/stories/story-{N}-*.md`)
+   - Mark all tasks/criteria as `[x]` completed
+   - Add implementation notes (files created, key details)
+   - Add PR link
+5. **Commit & Push** - Only after tests pass and user approves
+6. **Create PR** - Open a pull request for human review
+7. **After PR merged** - Close the GitHub issue
 
 **Rules:**
 - Do NOT close GitHub issues until the PR is merged
-- Do NOT update INDEX.md or story files until after merge
+- DO update cached docs (INDEX.md, story files) as part of the PR - they reflect the state *after* merge
 - Always wait for user approval before committing
+
+**Why update docs before merge?**
+The cached docs in `.context/milestones/` track the state of the codebase. When the PR merges, the story IS complete, so the docs should reflect that. Including doc updates in the PR keeps everything in sync.
 
 ## Next Steps (Priority Order)
 
-1. Implement `OrchestratorService` as a background service
-2. Implement `GitHubWorkSource` with Octokit
-3. Implement `AzureOpenAIProvider` with Azure.AI.OpenAI SDK
-4. Add PlantUML parsing to `PlantUmlGraphStore`
-5. Implement `GitService` with LibGit2Sharp
+1. Implement `DependencyResolver` to determine ready work items (Story #9)
+2. Implement `GitHubWorkSource` with Octokit (Story #10)
+3. Implement `SyncService` for bidirectional sync (Story #11)
+4. Implement `AzureOpenAIProvider` with Azure.AI.OpenAI SDK (Story #12)
+5. Implement `OrchestratorService` as a background service (Story #14)
+6. Implement `GitService` with LibGit2Sharp (Story #16)
 
 ## Important Notes
 

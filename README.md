@@ -113,11 +113,16 @@ When working on stories/issues, follow this process:
    dotnet test
    ```
 
-4. **Commit & Push** your changes
+4. **Update cached docs** (include in the PR):
+   - Update `.context/milestones/INDEX.md` (counts, status)
+   - Update `.context/milestones/stories/story-{N}-*.md` (mark tasks complete, add notes)
+   - These reflect the state *after* merge, so update them before creating the PR
 
-5. **Open a PR** for human review
+5. **Commit & Push** your changes
 
-6. **After merge**, close the GitHub issue
+6. **Open a PR** for human review
+
+7. **After merge**, close the GitHub issue
 
 ## Documentation
 

@@ -8,8 +8,8 @@
 |--------|-------|
 | Total Milestones | 5 |
 | Total Stories | 10 |
-| Open Stories | 10 |
-| Closed Stories | 0 |
+| Open Stories | 8 |
+| Closed Stories | 2 |
 
 ---
 
@@ -17,7 +17,7 @@
 
 | # | Milestone | Description | Stories | Progress |
 |---|-----------|-------------|---------|----------|
-| 1 | [Phase 2: PlantUML & Dependency Resolution](./milestone-1-plantuml-dependency.md) | Parse PlantUML, determine ready work items | 2 | 0/2 |
+| 1 | [Phase 2: PlantUML & Dependency Resolution](./milestone-1-plantuml-dependency.md) | Parse PlantUML, determine ready work items | 2 | 1/2 |
 | 2 | [Phase 3: GitHub Integration](./milestone-2-github-integration.md) | Sync with GitHub Issues via Octokit | 2 | 0/2 |
 | 3 | [Phase 4: Azure OpenAI Integration](./milestone-3-azure-openai.md) | AI-powered work execution | 2 | 0/2 |
 | 4 | [Phase 5: Orchestrator Service](./milestone-4-orchestrator-service.md) | Background service, state machine | 2 | 0/2 |
@@ -31,13 +31,13 @@
 
 | # | Title | Status | Labels |
 |---|-------|--------|--------|
-| [#7](./stories/story-7-test-infrastructure.md) | Set up test infrastructure | Open | `story`, `infrastructure` |
+| [#7](./stories/story-7-test-infrastructure.md) | Set up test infrastructure | **Closed** | `story`, `infrastructure` |
 
 ### Phase 2: PlantUML & Dependency Resolution
 
 | # | Title | Status | Labels |
 |---|-------|--------|--------|
-| [#8](./stories/story-8-plantuml-parser.md) | Implement PlantUmlParser | Open | `story`, `phase-2` |
+| [#8](./stories/story-8-plantuml-parser.md) | Implement PlantUmlParser | **Closed** | `story`, `phase-2` |
 | [#9](./stories/story-9-dependency-resolver.md) | Implement DependencyResolver | Open | `story`, `phase-2` |
 
 ### Phase 3: GitHub Integration
