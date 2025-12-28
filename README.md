@@ -94,7 +94,7 @@ On first run, go to **Settings** and configure:
 
 ## Current Status
 
-**Phase 1 Complete** - Foundation skeleton is built and running.
+**Phase 3 Complete** - GitHub Integration is built and tested.
 
 ## Development Workflow
 
@@ -106,23 +106,39 @@ When working on stories/issues, follow this process:
    # Example: git checkout -b 7-set-up-test-infrastructure
    ```
 
-2. **Implement** the feature/fix
+2. **Move issue to In Progress** - Signal that work has started:
+   ```bash
+   gh issue edit {issue-number} --add-label "in-progress"
+   ```
 
-3. **Test** before committing:
+3. **Implement** the feature/fix
+
+4. **Test** before committing:
    ```bash
    dotnet test
    ```
 
-4. **Update cached docs** (include in the PR):
+5. **Update cached docs** (include in the PR):
    - Update `.context/milestones/INDEX.md` (counts, status)
    - Update `.context/milestones/stories/story-{N}-*.md` (mark tasks complete, add notes)
    - These reflect the state *after* merge, so update them before creating the PR
 
-5. **Commit & Push** your changes
+6. **Commit & Push** your changes
 
-6. **Open a PR** for human review
+7. **Open a PR** for human review
 
-7. **After merge**, close the GitHub issue
+8. **Move issue to In Review** - When the PR is ready for review:
+   ```bash
+   gh issue edit {issue-number} --add-label "in-review" --remove-label "in-progress"
+   ```
+
+9. **After merge**, close the GitHub issue and remove `in-review` label
+
+10. **Unblock dependent stories** - Check if completing this story unblocks others:
+    ```bash
+    # Move newly unblocked stories from backlog to ready
+    gh issue edit {issue-number} --add-label "ready" --remove-label "backlog"
+    ```
 
 ## Documentation
 

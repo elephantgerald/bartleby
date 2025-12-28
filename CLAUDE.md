@@ -62,12 +62,13 @@ dotnet test
 - DI wired up
 - Test infrastructure (xUnit, FluentAssertions, Moq)
 - `PlantUmlParser` - Parse PlantUML to build dependency graph (59 tests)
+- `DependencyResolver` - Determine which work items are ready (30 tests)
+- `GitHubWorkSource` - GitHub integration using Octokit (42 tests)
+- `SyncService` - Bidirectional sync between GitHub and local store (35 tests)
 
 **Not Yet Implemented:**
-- `DependencyResolver` - Determine which work items are ready
-- `OrchestratorService` - Background service to pick up and execute work
-- `GitHubWorkSource` - Real GitHub integration using Octokit
 - `AzureOpenAIProvider` - Real AI integration
+- `OrchestratorService` - Background service to pick up and execute work
 - `GitService` - Auto-commit completed work
 
 ## Patterns & Conventions
@@ -84,17 +85,27 @@ dotnet test
 1. **Create branch** - Branch from `main` using ticket number + title in lowercase kebab-case
    - Format: `{issue-number}-{lowercase-kebab-title}`
    - Example: `7-set-up-test-infrastructure`
-2. **Implement** - Write the code/tests
-3. **Test together** - Run `dotnet test` and verify with the user
-4. **Update cached docs** - Update `.context/milestones/` files to reflect completed state
+2. **Move issue to In Progress** - Update the GitHub issue to indicate work has started
+   - `gh issue edit {issue-number} --add-label "in-progress"`
+   - This signals to others that the issue is actively being worked on
+3. **Implement** - Write the code/tests
+4. **Test together** - Run `dotnet test` and verify with the user
+5. **Update cached docs** - Update `.context/milestones/` files to reflect completed state
    - Update `INDEX.md` counts and status (mark story as **Closed**)
    - Update the story file (`.context/milestones/stories/story-{N}-*.md`)
    - Mark all tasks/criteria as `[x]` completed
    - Add implementation notes (files created, key details)
    - Add PR link
-5. **Commit & Push** - Only after tests pass and user approves
-6. **Create PR** - Open a pull request for human review
-7. **After PR merged** - Close the GitHub issue
+6. **Commit & Push** - Only after tests pass and user approves
+7. **Create PR** - Open a pull request for human review
+8. **Move issue to In Review** - When the PR is ready for review
+   - `gh issue edit {issue-number} --add-label "in-review" --remove-label "in-progress"`
+   - This signals the code is complete and awaiting human review
+9. **After PR merged** - Close the GitHub issue and remove `in-review` label
+10. **Unblock dependent stories** - Check if completing this story unblocks others
+    - Review stories in `backlog` status that depended on this one
+    - Move newly unblocked stories to `ready` status: `gh issue edit {issue-number} --add-label "ready" --remove-label "backlog"`
+    - This keeps the board current and signals what's available to work on next
 
 **Rules:**
 - Do NOT close GitHub issues until the PR is merged
@@ -106,12 +117,11 @@ The cached docs in `.context/milestones/` track the state of the codebase. When 
 
 ## Next Steps (Priority Order)
 
-1. Implement `DependencyResolver` to determine ready work items (Story #9)
-2. Implement `GitHubWorkSource` with Octokit (Story #10)
-3. Implement `SyncService` for bidirectional sync (Story #11)
-4. Implement `AzureOpenAIProvider` with Azure.AI.OpenAI SDK (Story #12)
-5. Implement `OrchestratorService` as a background service (Story #14)
-6. Implement `GitService` with LibGit2Sharp (Story #16)
+1. Implement `AzureOpenAIProvider` with Azure.AI.OpenAI SDK (Story #12)
+2. Implement `WorkExecutor` with prompt templates (Story #13)
+3. Implement `OrchestratorService` as a background service (Story #14)
+4. Implement blocked work management (Story #15)
+5. Implement `GitService` with LibGit2Sharp (Story #16)
 
 ## Important Notes
 
