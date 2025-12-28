@@ -42,19 +42,16 @@ public class WorkItemTests
         workItem.Status.Should().Be(WorkItemStatus.Ready);
     }
 
-    [Theory]
-    [InlineData(WorkItemStatus.Pending)]
-    [InlineData(WorkItemStatus.Ready)]
-    [InlineData(WorkItemStatus.InProgress)]
-    [InlineData(WorkItemStatus.Blocked)]
-    [InlineData(WorkItemStatus.Complete)]
-    [InlineData(WorkItemStatus.Failed)]
-    public void WorkItem_ShouldAcceptAllStatusValues(WorkItemStatus status)
+    [Fact]
+    public void WorkItem_ShouldAcceptAllStatusValues()
     {
-        // Arrange & Act
-        var workItem = new WorkItem { Status = status };
+        foreach (var status in Enum.GetValues<WorkItemStatus>())
+        {
+            // Arrange & Act
+            var workItem = new WorkItem { Status = status };
 
-        // Assert
-        workItem.Status.Should().Be(status);
+            // Assert
+            workItem.Status.Should().Be(status);
+        }
     }
 }
