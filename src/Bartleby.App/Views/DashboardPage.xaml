@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Bartleby.App.ViewModels"
+             x:Class="Bartleby.App.Views.DashboardPage"
+             x:DataType="vm:DashboardViewModel"
+             Title="Dashboard">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="20">
+
+            <!-- Header -->
+            <Label Text="Bartleby"
+                   FontSize="32"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center"/>
+            <Label Text="Autonomous Task Orchestrator"
+                   FontSize="16"
+                   TextColor="Gray"
+                   HorizontalOptions="Center"/>
+
+            <!-- Orchestrator Status -->
+            <Frame Padding="15" BackgroundColor="{AppThemeBinding Light=#F0F0F0, Dark=#2A2A2A}">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Orchestrator" FontSize="18" FontAttributes="Bold"/>
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="Status:" VerticalOptions="Center"/>
+                        <Label Text="{Binding OrchestratorStatus}"
+                               FontAttributes="Bold"
+                               TextColor="{Binding OrchestratorEnabled, Converter={StaticResource BoolToColorConverter}}"
+                               VerticalOptions="Center"/>
+                        <Button Text="{Binding OrchestratorEnabled, Converter={StaticResource BoolToToggleTextConverter}}"
+                                Command="{Binding ToggleOrchestratorCommand}"
+                                HorizontalOptions="EndAndExpand"/>
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Stats Grid -->
+            <Label Text="Work Items" FontSize="18" FontAttributes="Bold"/>
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
+
+                <Frame Grid.Row="0" Grid.Column="0" Padding="15" BackgroundColor="#4CAF50">
+                    <VerticalStackLayout>
+                        <Label Text="{Binding ReadyItems}" FontSize="36" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
+                        <Label Text="Ready" TextColor="White" HorizontalOptions="Center"/>
+                    </VerticalStackLayout>
+                </Frame>
+
+                <Frame Grid.Row="0" Grid.Column="1" Padding="15" BackgroundColor="#2196F3">
+                    <VerticalStackLayout>
+                        <Label Text="{Binding InProgressItems}" FontSize="36" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
+                        <Label Text="In Progress" TextColor="White" HorizontalOptions="Center"/>
+                    </VerticalStackLayout>
+                </Frame>
+
+                <Frame Grid.Row="1" Grid.Column="0" Padding="15" BackgroundColor="#FF9800"
+                       x:Name="BlockedFrame">
+                    <Frame.Triggers>
+                        <DataTrigger TargetType="Frame"
+                                     Binding="{Binding HasBlockedItems}"
+                                     Value="True">
+                            <Setter Property="BorderColor" Value="#FF1744"/>
+                            <Setter Property="HasShadow" Value="True"/>
+                        </DataTrigger>
+                    </Frame.Triggers>
+                    <VerticalStackLayout>
+                        <Label Text="{Binding BlockedItems}" FontSize="36" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
+                        <Label Text="Blocked" TextColor="White" HorizontalOptions="Center"/>
+                        <Label Text="Needs Attention!"
+                               FontSize="12"
+                               TextColor="White"
+                               FontAttributes="Italic"
+                               HorizontalOptions="Center"
+                               IsVisible="{Binding HasBlockedItems}"/>
+                    </VerticalStackLayout>
+                </Frame>
+
+                <Frame Grid.Row="1" Grid.Column="1" Padding="15" BackgroundColor="#9C27B0">
+                    <VerticalStackLayout>
+                        <Label Text="{Binding CompletedItems}" FontSize="36" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
+                        <Label Text="Completed" TextColor="White" HorizontalOptions="Center"/>
+                    </VerticalStackLayout>
+                </Frame>
+            </Grid>
+
+            <Label Text="{Binding TotalWorkItems, StringFormat='Total: {0} work items'}"
+                   HorizontalOptions="Center"
+                   TextColor="Gray"/>
+
+            <!-- Refresh Button -->
+            <Button Text="Refresh"
+                    Command="{Binding LoadDataCommand}"
+                    IsEnabled="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"
+                    HorizontalOptions="Center"/>
+
+            <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"/>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

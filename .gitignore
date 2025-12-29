@@ -110,3 +110,6 @@ secrets.json
 
 # Claude Code
 .claude/settings.local.json
+
+# Exception: Include Bartleby.App source folder (not macOS app bundles)
+!src/Bartleby.App/
