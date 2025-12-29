@@ -53,7 +53,7 @@ dotnet test
 
 ## Implementation Status
 
-**Completed:**
+**Completed (MVP Complete!):**
 - Solution structure with 4 projects
 - Core domain models and interfaces
 - LiteDB persistence layer
@@ -68,10 +68,8 @@ dotnet test
 - `AzureOpenAIProvider` - Azure OpenAI integration with retry/rate limiting (19 tests)
 - `WorkExecutor` - Prompt templates and transformation orchestration (38 tests)
 - `OrchestratorService` - Background service with state machine, quiet hours, token budgets (46 tests)
-
-**Not Yet Implemented:**
 - Blocked work management (Story #15)
-- `GitService` - Auto-commit completed work
+- `GitService` - Auto-commit completed work with LibGit2Sharp (46 tests)
 
 ## Patterns & Conventions
 
@@ -186,10 +184,14 @@ gh api graphql -f query='mutation {
 ## Why Update Docs Before Merge?
 The cached docs in `.context/milestones/` track the state of the codebase. When the PR merges, the story IS complete, so the docs should reflect that. Including doc updates in the PR keeps everything in sync.
 
-## Next Steps (Priority Order)
+## MVP Complete!
 
-1. Implement blocked work management (Story #15)
-2. Implement `GitService` with LibGit2Sharp (Story #16)
+All 10 stories across 5 milestones have been implemented. The Bartleby MVP is feature-complete with:
+- PlantUML dependency parsing and resolution
+- GitHub Issues synchronization
+- Azure OpenAI work execution
+- Background orchestration service
+- Git auto-commit for completed work
 
 ## Important Notes
 

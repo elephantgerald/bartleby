@@ -8,8 +8,8 @@
 |--------|-------|
 | Total Milestones | 5 |
 | Total Stories | 10 |
-| Open Stories | 1 |
-| Closed Stories | 9 |
+| Open Stories | 0 |
+| Closed Stories | 10 |
 
 ---
 
@@ -21,7 +21,7 @@
 | 2 | [Phase 3: GitHub Integration](./milestone-2-github-integration.md) | Sync with GitHub Issues via Octokit | 2 | 2/2 |
 | 3 | [Phase 4: Azure OpenAI Integration](./milestone-3-azure-openai.md) | AI-powered work execution | 2 | 2/2 |
 | 4 | [Phase 5: Orchestrator Service](./milestone-4-orchestrator-service.md) | Background service, state machine | 2 | 2/2 |
-| 5 | [Phase 6: Git Integration](./milestone-5-git-integration.md) | Auto-commit completed work | 1 | 0/1 |
+| 5 | [Phase 6: Git Integration](./milestone-5-git-integration.md) | Auto-commit completed work | 1 | 1/1 |
 
 ---
 
@@ -65,7 +65,7 @@
 
 | # | Title | Status | Labels |
 |---|-------|--------|--------|
-| [#16](./stories/story-16-git-service.md) | Implement GitService with LibGit2Sharp | Open | `story`, `phase-6` |
+| [#16](./stories/story-16-git-service.md) | Implement GitService with LibGit2Sharp | **Closed** | `story`, `phase-6` |
 
 ---
 
