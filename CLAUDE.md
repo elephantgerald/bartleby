@@ -67,9 +67,10 @@ dotnet test
 - `SyncService` - Bidirectional sync between GitHub and local store (35 tests)
 - `AzureOpenAIProvider` - Azure OpenAI integration with retry/rate limiting (19 tests)
 - `WorkExecutor` - Prompt templates and transformation orchestration (38 tests)
+- `OrchestratorService` - Background service with state machine, quiet hours, token budgets (46 tests)
 
 **Not Yet Implemented:**
-- `OrchestratorService` - Background service to pick up and execute work
+- Blocked work management (Story #15)
 - `GitService` - Auto-commit completed work
 
 ## Patterns & Conventions
@@ -187,9 +188,8 @@ The cached docs in `.context/milestones/` track the state of the codebase. When 
 
 ## Next Steps (Priority Order)
 
-1. Implement `OrchestratorService` as a background service (Story #14)
-2. Implement blocked work management (Story #15)
-3. Implement `GitService` with LibGit2Sharp (Story #16)
+1. Implement blocked work management (Story #15)
+2. Implement `GitService` with LibGit2Sharp (Story #16)
 
 ## Important Notes
 
