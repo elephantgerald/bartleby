@@ -65,9 +65,10 @@ dotnet test
 - `DependencyResolver` - Determine which work items are ready (30 tests)
 - `GitHubWorkSource` - GitHub integration using Octokit (42 tests)
 - `SyncService` - Bidirectional sync between GitHub and local store (35 tests)
+- `AzureOpenAIProvider` - Azure OpenAI integration with retry/rate limiting (19 tests)
 
 **Not Yet Implemented:**
-- `AzureOpenAIProvider` - Real AI integration
+- `WorkExecutor` - Prompt templates for task execution
 - `OrchestratorService` - Background service to pick up and execute work
 - `GitService` - Auto-commit completed work
 
@@ -186,11 +187,10 @@ The cached docs in `.context/milestones/` track the state of the codebase. When 
 
 ## Next Steps (Priority Order)
 
-1. Implement `AzureOpenAIProvider` with Azure.AI.OpenAI SDK (Story #12)
-2. Implement `WorkExecutor` with prompt templates (Story #13)
-3. Implement `OrchestratorService` as a background service (Story #14)
-4. Implement blocked work management (Story #15)
-5. Implement `GitService` with LibGit2Sharp (Story #16)
+1. Implement `WorkExecutor` with prompt templates (Story #13)
+2. Implement `OrchestratorService` as a background service (Story #14)
+3. Implement blocked work management (Story #15)
+4. Implement `GitService` with LibGit2Sharp (Story #16)
 
 ## Important Notes
 
