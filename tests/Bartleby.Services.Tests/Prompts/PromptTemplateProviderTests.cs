@@ -1,3 +1,4 @@
+using Bartleby.Core.Interfaces;
 using Bartleby.Core.Models;
 using Bartleby.Services.Prompts;
 using FluentAssertions;
@@ -6,6 +7,8 @@ namespace Bartleby.Services.Tests.Prompts;
 
 public class PromptTemplateProviderTests
 {
+    private readonly IPromptTemplateProvider _sut = new PromptTemplateProvider();
+
     #region GetSystemPrompt Tests
 
     [Theory]
@@ -21,7 +24,7 @@ public class PromptTemplateProviderTests
         var workingDirectory = "/test/project/path";
 
         // Act
-        var prompt = PromptTemplateProvider.GetSystemPrompt(type, workingDirectory);
+        var prompt = _sut.GetSystemPrompt(type, workingDirectory);
 
         // Assert
         prompt.Should().Contain(workingDirectory);
@@ -37,7 +40,7 @@ public class PromptTemplateProviderTests
     public void GetSystemPrompt_ContainsJsonFormat(TransformationType type)
     {
         // Act
-        var prompt = PromptTemplateProvider.GetSystemPrompt(type, "/work");
+        var prompt = _sut.GetSystemPrompt(type, "/work");
 
         // Assert
         prompt.Should().Contain("outcome");
@@ -50,7 +53,7 @@ public class PromptTemplateProviderTests
     public void GetSystemPrompt_ForInterpret_ContainsInterpretInstructions()
     {
         // Act
-        var prompt = PromptTemplateProvider.GetSystemPrompt(TransformationType.Interpret, "/work");
+        var prompt = _sut.GetSystemPrompt(TransformationType.Interpret, "/work");
 
         // Assert
         prompt.Should().Contain("TRANSFORMATION: Interpret");
@@ -62,7 +65,7 @@ public class PromptTemplateProviderTests
     public void GetSystemPrompt_ForPlan_ContainsPlanInstructions()
     {
         // Act
-        var prompt = PromptTemplateProvider.GetSystemPrompt(TransformationType.Plan, "/work");
+        var prompt = _sut.GetSystemPrompt(TransformationType.Plan, "/work");
 
         // Assert
         prompt.Should().Contain("TRANSFORMATION: Plan");
@@ -74,7 +77,7 @@ public class PromptTemplateProviderTests
     public void GetSystemPrompt_ForExecute_ContainsExecuteInstructions()
     {
         // Act
-        var prompt = PromptTemplateProvider.GetSystemPrompt(TransformationType.Execute, "/work");
+        var prompt = _sut.GetSystemPrompt(TransformationType.Execute, "/work");
 
         // Assert
         prompt.Should().Contain("TRANSFORMATION: Execute");
@@ -85,7 +88,7 @@ public class PromptTemplateProviderTests
     public void GetSystemPrompt_ForRefine_ContainsRefineInstructions()
     {
         // Act
-        var prompt = PromptTemplateProvider.GetSystemPrompt(TransformationType.Refine, "/work");
+        var prompt = _sut.GetSystemPrompt(TransformationType.Refine, "/work");
 
         // Assert
         prompt.Should().Contain("TRANSFORMATION: Refine");
@@ -96,7 +99,7 @@ public class PromptTemplateProviderTests
     public void GetSystemPrompt_ForAskClarification_ContainsClarificationInstructions()
     {
         // Act
-        var prompt = PromptTemplateProvider.GetSystemPrompt(TransformationType.AskClarification, "/work");
+        var prompt = _sut.GetSystemPrompt(TransformationType.AskClarification, "/work");
 
         // Assert
         prompt.Should().Contain("TRANSFORMATION: Ask Clarification");
@@ -107,7 +110,7 @@ public class PromptTemplateProviderTests
     public void GetSystemPrompt_ForFinalize_ContainsFinalizeInstructions()
     {
         // Act
-        var prompt = PromptTemplateProvider.GetSystemPrompt(TransformationType.Finalize, "/work");
+        var prompt = _sut.GetSystemPrompt(TransformationType.Finalize, "/work");
 
         // Assert
         prompt.Should().Contain("TRANSFORMATION: Finalize");
@@ -118,7 +121,7 @@ public class PromptTemplateProviderTests
     public void GetSystemPrompt_ContainsBartlebyIdentity()
     {
         // Act
-        var prompt = PromptTemplateProvider.GetSystemPrompt(TransformationType.Execute, "/work");
+        var prompt = _sut.GetSystemPrompt(TransformationType.Execute, "/work");
 
         // Assert
         prompt.Should().Contain("Bartleby");
@@ -133,7 +136,7 @@ public class PromptTemplateProviderTests
     [Fact]
     public void BuildUserPrompt_WithNullContext_ThrowsArgumentNullException()
     {
-        var act = () => PromptTemplateProvider.BuildUserPrompt(null!);
+        var act = () => _sut.BuildUserPrompt(null!);
 
         act.Should().Throw<ArgumentNullException>();
     }
@@ -145,7 +148,7 @@ public class PromptTemplateProviderTests
         var context = CreateContext("Test Feature Implementation");
 
         // Act
-        var prompt = PromptTemplateProvider.BuildUserPrompt(context);
+        var prompt = _sut.BuildUserPrompt(context);
 
         // Assert
         prompt.Should().Contain("Test Feature Implementation");
@@ -159,7 +162,7 @@ public class PromptTemplateProviderTests
         context.WorkItem.Description = "Implement the new authentication feature";
 
         // Act
-        var prompt = PromptTemplateProvider.BuildUserPrompt(context);
+        var prompt = _sut.BuildUserPrompt(context);
 
         // Assert
         prompt.Should().Contain("Implement the new authentication feature");
@@ -173,7 +176,7 @@ public class PromptTemplateProviderTests
         context.WorkItem.Labels = ["feature", "auth", "priority-high"];
 
         // Act
-        var prompt = PromptTemplateProvider.BuildUserPrompt(context);
+        var prompt = _sut.BuildUserPrompt(context);
 
         // Assert
         prompt.Should().Contain("feature");
@@ -189,7 +192,7 @@ public class PromptTemplateProviderTests
         context.WorkItem.ExternalUrl = "https://github.com/test/repo/issues/123";
 
         // Act
-        var prompt = PromptTemplateProvider.BuildUserPrompt(context);
+        var prompt = _sut.BuildUserPrompt(context);
 
         // Assert
         prompt.Should().Contain("https://github.com/test/repo/issues/123");
@@ -218,7 +221,7 @@ public class PromptTemplateProviderTests
         };
 
         // Act
-        var prompt = PromptTemplateProvider.BuildUserPrompt(context);
+        var prompt = _sut.BuildUserPrompt(context);
 
         // Assert
         prompt.Should().Contain("Previous Work Sessions");
@@ -253,7 +256,7 @@ public class PromptTemplateProviderTests
         };
 
         // Act
-        var prompt = PromptTemplateProvider.BuildUserPrompt(context);
+        var prompt = _sut.BuildUserPrompt(context);
 
         // Assert
         prompt.Should().Contain("Answered Questions");
@@ -276,7 +279,7 @@ public class PromptTemplateProviderTests
         };
 
         // Act
-        var prompt = PromptTemplateProvider.BuildUserPrompt(context);
+        var prompt = _sut.BuildUserPrompt(context);
 
         // Assert
         prompt.Should().Contain("Additional Instructions");
@@ -302,7 +305,7 @@ public class PromptTemplateProviderTests
         };
 
         // Act
-        var prompt = PromptTemplateProvider.BuildUserPrompt(context);
+        var prompt = _sut.BuildUserPrompt(context);
 
         // Assert
         prompt.Should().NotContain("Labels:");

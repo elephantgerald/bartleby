@@ -14,6 +14,7 @@ public class WorkExecutorTests
     private readonly Mock<IWorkSessionRepository> _sessionRepoMock;
     private readonly Mock<IBlockedQuestionRepository> _questionRepoMock;
     private readonly Mock<ISettingsRepository> _settingsRepoMock;
+    private readonly Mock<IPromptTemplateProvider> _promptTemplateProviderMock;
     private readonly Mock<ILogger<WorkExecutor>> _loggerMock;
     private readonly WorkExecutor _sut;
 
@@ -24,6 +25,7 @@ public class WorkExecutorTests
         _sessionRepoMock = new Mock<IWorkSessionRepository>();
         _questionRepoMock = new Mock<IBlockedQuestionRepository>();
         _settingsRepoMock = new Mock<ISettingsRepository>();
+        _promptTemplateProviderMock = new Mock<IPromptTemplateProvider>();
         _loggerMock = new Mock<ILogger<WorkExecutor>>();
 
         _settingsRepoMock
@@ -38,12 +40,21 @@ public class WorkExecutorTests
             .Setup(r => r.UpdateAsync(It.IsAny<WorkItem>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((WorkItem w, CancellationToken _) => w);
 
+        _promptTemplateProviderMock
+            .Setup(p => p.GetSystemPrompt(It.IsAny<TransformationType>(), It.IsAny<string>()))
+            .Returns("System prompt");
+
+        _promptTemplateProviderMock
+            .Setup(p => p.BuildUserPrompt(It.IsAny<WorkExecutionContext>()))
+            .Returns("User prompt");
+
         _sut = new WorkExecutor(
             _aiProviderMock.Object,
             _workItemRepoMock.Object,
             _sessionRepoMock.Object,
             _questionRepoMock.Object,
             _settingsRepoMock.Object,
+            _promptTemplateProviderMock.Object,
             _loggerMock.Object);
     }
 
@@ -58,6 +69,7 @@ public class WorkExecutorTests
             _sessionRepoMock.Object,
             _questionRepoMock.Object,
             _settingsRepoMock.Object,
+            _promptTemplateProviderMock.Object,
             _loggerMock.Object);
 
         act.Should().Throw<ArgumentNullException>().WithParameterName("aiProvider");
@@ -72,6 +84,7 @@ public class WorkExecutorTests
             _sessionRepoMock.Object,
             _questionRepoMock.Object,
             _settingsRepoMock.Object,
+            _promptTemplateProviderMock.Object,
             _loggerMock.Object);
 
         act.Should().Throw<ArgumentNullException>().WithParameterName("workItemRepository");
@@ -86,6 +99,7 @@ public class WorkExecutorTests
             null!,
             _questionRepoMock.Object,
             _settingsRepoMock.Object,
+            _promptTemplateProviderMock.Object,
             _loggerMock.Object);
 
         act.Should().Throw<ArgumentNullException>().WithParameterName("workSessionRepository");
@@ -100,6 +114,7 @@ public class WorkExecutorTests
             _sessionRepoMock.Object,
             null!,
             _settingsRepoMock.Object,
+            _promptTemplateProviderMock.Object,
             _loggerMock.Object);
 
         act.Should().Throw<ArgumentNullException>().WithParameterName("blockedQuestionRepository");
@@ -114,9 +129,25 @@ public class WorkExecutorTests
             _sessionRepoMock.Object,
             _questionRepoMock.Object,
             null!,
+            _promptTemplateProviderMock.Object,
             _loggerMock.Object);
 
         act.Should().Throw<ArgumentNullException>().WithParameterName("settingsRepository");
+    }
+
+    [Fact]
+    public void Constructor_WithNullPromptTemplateProvider_ThrowsArgumentNullException()
+    {
+        var act = () => new WorkExecutor(
+            _aiProviderMock.Object,
+            _workItemRepoMock.Object,
+            _sessionRepoMock.Object,
+            _questionRepoMock.Object,
+            _settingsRepoMock.Object,
+            null!,
+            _loggerMock.Object);
+
+        act.Should().Throw<ArgumentNullException>().WithParameterName("promptTemplateProvider");
     }
 
     [Fact]
@@ -128,6 +159,7 @@ public class WorkExecutorTests
             _sessionRepoMock.Object,
             _questionRepoMock.Object,
             _settingsRepoMock.Object,
+            _promptTemplateProviderMock.Object,
             null!);
 
         act.Should().Throw<ArgumentNullException>().WithParameterName("logger");

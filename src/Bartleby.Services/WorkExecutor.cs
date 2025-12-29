@@ -1,6 +1,5 @@
 using Bartleby.Core.Interfaces;
 using Bartleby.Core.Models;
-using Bartleby.Services.Prompts;
 using Microsoft.Extensions.Logging;
 
 namespace Bartleby.Services;
@@ -27,6 +26,7 @@ public class WorkExecutor : IWorkExecutor
     private readonly IWorkSessionRepository _workSessionRepository;
     private readonly IBlockedQuestionRepository _blockedQuestionRepository;
     private readonly ISettingsRepository _settingsRepository;
+    private readonly IPromptTemplateProvider _promptTemplateProvider;
     private readonly ILogger<WorkExecutor> _logger;
 
     public WorkExecutor(
@@ -35,6 +35,7 @@ public class WorkExecutor : IWorkExecutor
         IWorkSessionRepository workSessionRepository,
         IBlockedQuestionRepository blockedQuestionRepository,
         ISettingsRepository settingsRepository,
+        IPromptTemplateProvider promptTemplateProvider,
         ILogger<WorkExecutor> logger)
     {
         _aiProvider = aiProvider ?? throw new ArgumentNullException(nameof(aiProvider));
@@ -42,6 +43,7 @@ public class WorkExecutor : IWorkExecutor
         _workSessionRepository = workSessionRepository ?? throw new ArgumentNullException(nameof(workSessionRepository));
         _blockedQuestionRepository = blockedQuestionRepository ?? throw new ArgumentNullException(nameof(blockedQuestionRepository));
         _settingsRepository = settingsRepository ?? throw new ArgumentNullException(nameof(settingsRepository));
+        _promptTemplateProvider = promptTemplateProvider ?? throw new ArgumentNullException(nameof(promptTemplateProvider));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -68,10 +70,10 @@ public class WorkExecutor : IWorkExecutor
         try
         {
             // Build prompts using the template provider
-            var systemPrompt = PromptTemplateProvider.GetSystemPrompt(
+            var systemPrompt = _promptTemplateProvider.GetSystemPrompt(
                 context.TransformationType,
                 context.WorkingDirectory);
-            var userPrompt = PromptTemplateProvider.BuildUserPrompt(context);
+            var userPrompt = _promptTemplateProvider.BuildUserPrompt(context);
 
             // Execute via AI provider
             var result = await _aiProvider.ExecutePromptAsync(
@@ -160,7 +162,8 @@ public class WorkExecutor : IWorkExecutor
             return null;
         }
 
-        var settings = await _settingsRepository.GetSettingsAsync(cancellationToken);
+        var settings = await _settingsRepository.GetSettingsAsync(cancellationToken)
+            ?? throw new InvalidOperationException("Settings not configured");
         var previousSessions = await _workSessionRepository.GetByWorkItemIdAsync(workItemId, cancellationToken);
         var questions = await _blockedQuestionRepository.GetByWorkItemIdAsync(workItemId, cancellationToken);
         var answeredQuestions = questions.Where(q => q.IsAnswered).ToList();
@@ -218,13 +221,14 @@ public class WorkExecutor : IWorkExecutor
 
         return lastTransformation switch
         {
+            null => TransformationType.Interpret, // No completed transformation yet
             TransformationType.Interpret => TransformationType.Plan,
             TransformationType.Plan => TransformationType.Execute,
             TransformationType.Execute => TransformationType.Finalize,
             TransformationType.Refine => TransformationType.Finalize,
             TransformationType.AskClarification => TransformationType.Execute,
             TransformationType.Finalize => TransformationType.Finalize, // Already complete
-            _ => TransformationType.Plan
+            _ => TransformationType.Interpret // Unknown state, start fresh
         };
     }
 
@@ -255,6 +259,8 @@ public class WorkExecutor : IWorkExecutor
     {
         foreach (var questionText in questions)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var blockedQuestion = new BlockedQuestion
             {
                 WorkItemId = workItemId,

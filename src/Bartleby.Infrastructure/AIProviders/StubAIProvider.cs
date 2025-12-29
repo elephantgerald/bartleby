@@ -1,5 +1,6 @@
 using Bartleby.Core.Interfaces;
 using Bartleby.Core.Models;
+using Microsoft.Extensions.Logging;
 
 namespace Bartleby.Infrastructure.AIProviders;
 
@@ -9,6 +10,15 @@ namespace Bartleby.Infrastructure.AIProviders;
 public class StubAIProvider : IAIProvider
 {
     private readonly Random _random = new();
+    private readonly ILogger<StubAIProvider>? _logger;
+
+    /// <summary>
+    /// Creates a new StubAIProvider with optional logging.
+    /// </summary>
+    public StubAIProvider(ILogger<StubAIProvider>? logger = null)
+    {
+        _logger = logger;
+    }
 
     public string Name => "Stub";
 
@@ -72,6 +82,12 @@ public class StubAIProvider : IAIProvider
         string workingDirectory,
         CancellationToken cancellationToken = default)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(workingDirectory);
+
+        _logger?.LogDebug(
+            "StubAIProvider executing prompt with working directory: {WorkingDirectory}",
+            workingDirectory);
+
         // Simulate some work time
         await Task.Delay(TimeSpan.FromSeconds(_random.Next(1, 3)), cancellationToken);
 

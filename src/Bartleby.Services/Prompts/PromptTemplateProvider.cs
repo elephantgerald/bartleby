@@ -1,4 +1,5 @@
 using System.Text;
+using Bartleby.Core.Interfaces;
 using Bartleby.Core.Models;
 
 namespace Bartleby.Services.Prompts;
@@ -7,15 +8,10 @@ namespace Bartleby.Services.Prompts;
 /// Provides prompt templates for different transformation types.
 /// Each transformation has a specific focus and expected output format.
 /// </summary>
-public static class PromptTemplateProvider
+public class PromptTemplateProvider : IPromptTemplateProvider
 {
-    /// <summary>
-    /// Gets the system prompt for a transformation type.
-    /// </summary>
-    /// <param name="type">The transformation type.</param>
-    /// <param name="workingDirectory">The working directory path.</param>
-    /// <returns>The system prompt for the AI.</returns>
-    public static string GetSystemPrompt(TransformationType type, string workingDirectory)
+    /// <inheritdoc />
+    public string GetSystemPrompt(TransformationType type, string workingDirectory)
     {
         var basePrompt = $$"""
             You are Bartleby, an autonomous software development scrivener.
@@ -112,13 +108,8 @@ public static class PromptTemplateProvider
         return basePrompt + typeSpecificPrompt;
     }
 
-    /// <summary>
-    /// Builds the user prompt with work item details and context.
-    /// Includes provenance information from previous sessions.
-    /// </summary>
-    /// <param name="context">The work execution context.</param>
-    /// <returns>The user prompt for the AI.</returns>
-    public static string BuildUserPrompt(WorkExecutionContext context)
+    /// <inheritdoc />
+    public string BuildUserPrompt(WorkExecutionContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
 
