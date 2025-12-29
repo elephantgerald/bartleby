@@ -461,6 +461,12 @@ public class OrchestratorService : IOrchestratorService, IDisposable
             return;
         }
 
+        // Track previous status when transitioning to Blocked
+        if (newStatus == WorkItemStatus.Blocked && previousStatus != WorkItemStatus.Blocked)
+        {
+            workItem.PreviousStatus = previousStatus;
+        }
+
         workItem.Status = newStatus;
         workItem.UpdatedAt = _timeProvider.UtcNow;
 

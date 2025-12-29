@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Bartleby.Core.Interfaces;
 using Bartleby.Core.Models;
+using Microsoft.Extensions.Logging;
 
 namespace Bartleby.App.ViewModels;
 
@@ -10,6 +11,7 @@ public partial class BlockedViewModel : ObservableObject
 {
     private readonly IBlockedQuestionRepository _questionRepository;
     private readonly IWorkItemRepository _workItemRepository;
+    private readonly ILogger<BlockedViewModel>? _logger;
 
     [ObservableProperty]
     private ObservableCollection<BlockedQuestionDisplay> _questions = [];
@@ -23,33 +25,49 @@ public partial class BlockedViewModel : ObservableObject
     [ObservableProperty]
     private bool _isLoading;
 
+    [ObservableProperty]
+    private string? _errorMessage;
+
     public BlockedViewModel(
         IBlockedQuestionRepository questionRepository,
-        IWorkItemRepository workItemRepository)
+        IWorkItemRepository workItemRepository,
+        ILogger<BlockedViewModel>? logger = null)
     {
         _questionRepository = questionRepository;
         _workItemRepository = workItemRepository;
+        _logger = logger;
     }
 
-    [RelayCommand]
-    private async Task LoadQuestionsAsync()
+    [RelayCommand(IncludeCancelCommand = true)]
+    private async Task LoadQuestionsAsync(CancellationToken cancellationToken)
     {
         IsLoading = true;
+        ErrorMessage = null;
 
         try
         {
-            var unanswered = await _questionRepository.GetUnansweredAsync();
+            var unanswered = await _questionRepository.GetUnansweredAsync(cancellationToken);
             Questions.Clear();
 
             foreach (var q in unanswered)
             {
-                var workItem = await _workItemRepository.GetByIdAsync(q.WorkItemId);
+                cancellationToken.ThrowIfCancellationRequested();
+                var workItem = await _workItemRepository.GetByIdAsync(q.WorkItemId, cancellationToken);
                 Questions.Add(new BlockedQuestionDisplay
                 {
                     Question = q,
                     WorkItemTitle = workItem?.Title ?? "Unknown"
                 });
             }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected when cancelled
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Failed to load blocked questions");
+            ErrorMessage = "Failed to load questions. Please try again.";
         }
         finally
         {
@@ -58,32 +76,49 @@ public partial class BlockedViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task SubmitAnswerAsync()
+    private async Task SubmitAnswerAsync(CancellationToken cancellationToken)
     {
         if (SelectedQuestion is null || string.IsNullOrWhiteSpace(AnswerText))
             return;
 
-        var question = SelectedQuestion.Question;
-        question.Answer = AnswerText;
-        question.AnsweredAt = DateTime.UtcNow;
+        ErrorMessage = null;
 
-        await _questionRepository.UpdateAsync(question);
-
-        // Check if all questions for this work item are answered
-        var remaining = await _questionRepository.GetByWorkItemIdAsync(question.WorkItemId);
-        if (remaining.All(q => q.IsAnswered))
+        try
         {
-            var workItem = await _workItemRepository.GetByIdAsync(question.WorkItemId);
-            if (workItem is not null)
-            {
-                workItem.Status = WorkItemStatus.Ready;
-                await _workItemRepository.UpdateAsync(workItem);
-            }
-        }
+            var question = SelectedQuestion.Question;
+            question.Answer = AnswerText;
+            question.AnsweredAt = DateTime.UtcNow;
 
-        Questions.Remove(SelectedQuestion);
-        SelectedQuestion = null;
-        AnswerText = string.Empty;
+            await _questionRepository.UpdateAsync(question, cancellationToken);
+
+            // Check if all questions for this work item are answered
+            var remaining = await _questionRepository.GetByWorkItemIdAsync(question.WorkItemId, cancellationToken);
+            if (remaining.All(q => q.IsAnswered))
+            {
+                var workItem = await _workItemRepository.GetByIdAsync(question.WorkItemId, cancellationToken);
+                if (workItem is not null)
+                {
+                    // Restore previous status, or default to Ready if unknown
+                    workItem.Status = workItem.PreviousStatus ?? WorkItemStatus.Ready;
+                    workItem.PreviousStatus = null; // Clear the saved state
+                    workItem.UpdatedAt = DateTime.UtcNow;
+                    await _workItemRepository.UpdateAsync(workItem, cancellationToken);
+                }
+            }
+
+            Questions.Remove(SelectedQuestion);
+            SelectedQuestion = null;
+            AnswerText = string.Empty;
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected when cancelled
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Failed to submit answer");
+            ErrorMessage = "Failed to submit answer. Please try again.";
+        }
     }
 }
 

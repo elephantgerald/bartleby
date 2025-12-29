@@ -23,6 +23,11 @@ public class WorkItem
     public WorkItemStatus Status { get; set; } = WorkItemStatus.Pending;
 
     /// <summary>
+    /// Status before the item became blocked. Used to restore state when unblocked.
+    /// </summary>
+    public WorkItemStatus? PreviousStatus { get; set; }
+
+    /// <summary>
     /// Identifier from the external source (e.g., GitHub Issue number).
     /// </summary>
     public string? ExternalId { get; set; }

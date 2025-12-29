@@ -11,7 +11,6 @@ public partial class DashboardPage : ContentPage
     {
         InitializeComponent();
         BindingContext = viewModel;
-        viewModel.PropertyChanged += OnViewModelPropertyChanged;
     }
 
     protected override async void OnAppearing()
@@ -19,6 +18,7 @@ public partial class DashboardPage : ContentPage
         base.OnAppearing();
         if (BindingContext is DashboardViewModel vm)
         {
+            vm.PropertyChanged += OnViewModelPropertyChanged;
             await vm.LoadDataCommand.ExecuteAsync(null);
             UpdatePulsingAnimation(vm.HasBlockedItems);
         }
@@ -28,6 +28,10 @@ public partial class DashboardPage : ContentPage
     {
         base.OnDisappearing();
         StopPulsingAnimation();
+        if (BindingContext is DashboardViewModel vm)
+        {
+            vm.PropertyChanged -= OnViewModelPropertyChanged;
+        }
     }
 
     private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
