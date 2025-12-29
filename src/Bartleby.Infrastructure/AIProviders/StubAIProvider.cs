@@ -65,4 +65,54 @@ public class StubAIProvider : IAIProvider
     {
         return Task.FromResult(true);
     }
+
+    public async Task<WorkExecutionResult> ExecutePromptAsync(
+        string systemPrompt,
+        string userPrompt,
+        string workingDirectory,
+        CancellationToken cancellationToken = default)
+    {
+        // Simulate some work time
+        await Task.Delay(TimeSpan.FromSeconds(_random.Next(1, 3)), cancellationToken);
+
+        // Randomly decide outcome (same distribution as ExecuteWorkAsync)
+        var outcome = _random.Next(100);
+
+        if (outcome < 60) // 60% success
+        {
+            return new WorkExecutionResult
+            {
+                Success = true,
+                Outcome = WorkExecutionOutcome.Completed,
+                Summary = "Successfully completed the transformation",
+                ModifiedFiles = ["src/Example.cs", "tests/ExampleTests.cs"],
+                TokensUsed = _random.Next(1000, 5000)
+            };
+        }
+        else if (outcome < 85) // 25% blocked
+        {
+            return new WorkExecutionResult
+            {
+                Success = false,
+                Outcome = WorkExecutionOutcome.Blocked,
+                Summary = "Need more information to proceed",
+                Questions =
+                [
+                    "What approach should be used for this feature?",
+                    "Are there any constraints to consider?"
+                ],
+                TokensUsed = _random.Next(500, 2000)
+            };
+        }
+        else // 15% failed
+        {
+            return new WorkExecutionResult
+            {
+                Success = false,
+                Outcome = WorkExecutionOutcome.Failed,
+                ErrorMessage = "Simulated failure for testing purposes",
+                TokensUsed = _random.Next(100, 500)
+            };
+        }
+    }
 }

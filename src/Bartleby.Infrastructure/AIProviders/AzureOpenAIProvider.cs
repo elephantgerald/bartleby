@@ -141,6 +141,71 @@ public class AzureOpenAIProvider : IAIProvider
         }
     }
 
+    public async Task<WorkExecutionResult> ExecutePromptAsync(
+        string systemPrompt,
+        string userPrompt,
+        string workingDirectory,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(systemPrompt);
+        ArgumentException.ThrowIfNullOrWhiteSpace(userPrompt);
+        ArgumentException.ThrowIfNullOrWhiteSpace(workingDirectory);
+
+        try
+        {
+            var settings = await _settingsRepository.GetSettingsAsync(cancellationToken);
+            ValidateSettings(settings);
+
+            var chatClient = CreateChatClientWrapper(settings);
+            var messages = new List<ChatMessage>
+            {
+                new SystemChatMessage(systemPrompt),
+                new UserChatMessage(userPrompt)
+            };
+
+            _logger.LogInformation("Executing prompt with working directory: {WorkingDirectory}", workingDirectory);
+
+            var completion = await s_resiliencePipeline.ExecuteAsync(
+                async ct => await chatClient.CompleteChatAsync(messages, s_chatCompletionOptions, ct),
+                cancellationToken);
+
+            return ParseCompletionResultForPrompt(completion);
+        }
+        catch (ClientResultException ex) when (IsAuthenticationError(ex))
+        {
+            _logger.LogError(ex, "Authentication failed for Azure OpenAI");
+            return new WorkExecutionResult
+            {
+                Success = false,
+                Outcome = WorkExecutionOutcome.Failed,
+                ErrorMessage = "Azure OpenAI authentication failed. Please check your API key and endpoint.",
+                TokensUsed = 0
+            };
+        }
+        catch (ClientResultException ex) when (IsRateLimitError(ex))
+        {
+            _logger.LogWarning(ex, "Rate limit exceeded for Azure OpenAI after retries");
+            return new WorkExecutionResult
+            {
+                Success = false,
+                Outcome = WorkExecutionOutcome.Failed,
+                ErrorMessage = "Rate limit exceeded. Please try again later.",
+                TokensUsed = 0
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error executing prompt");
+            return new WorkExecutionResult
+            {
+                Success = false,
+                Outcome = WorkExecutionOutcome.Failed,
+                ErrorMessage = $"Error executing prompt: {ex.Message}",
+                TokensUsed = 0
+            };
+        }
+    }
+
     private IChatClientWrapper CreateChatClientWrapper(AppSettings settings)
     {
         if (_chatClientFactory != null)
@@ -266,6 +331,63 @@ public class AzureOpenAIProvider : IAIProvider
             catch (System.Text.Json.JsonException ex)
             {
                 _logger.LogWarning(ex, "Failed to parse AI response as JSON");
+            }
+        }
+
+        // Fallback: could not parse response - safer to mark as needing review
+        return new WorkExecutionResult
+        {
+            Success = false,
+            Outcome = WorkExecutionOutcome.NeedsMoreContext,
+            Summary = $"Could not parse AI response. Raw output: {content}",
+            ModifiedFiles = [],
+            Questions = [],
+            TokensUsed = tokensUsed
+        };
+    }
+
+    private WorkExecutionResult ParseCompletionResultForPrompt(ChatCompletion completion)
+    {
+        var content = completion.Content.FirstOrDefault()?.Text ?? string.Empty;
+        var tokensUsed = CalculateTokensUsed(completion);
+
+        _logger.LogDebug("Received prompt response: {TokensUsed} tokens used", tokensUsed);
+
+        // Try to parse as JSON response using progressively more permissive extraction
+        var jsonContent = ExtractJsonContent(content);
+
+        if (jsonContent != null)
+        {
+            try
+            {
+                var response = System.Text.Json.JsonSerializer.Deserialize<AiResponsePayload>(
+                    jsonContent,
+                    new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                if (response != null)
+                {
+                    var outcome = response.Outcome?.ToLowerInvariant() switch
+                    {
+                        "completed" => WorkExecutionOutcome.Completed,
+                        "blocked" => WorkExecutionOutcome.Blocked,
+                        "needs_context" => WorkExecutionOutcome.NeedsMoreContext,
+                        _ => WorkExecutionOutcome.NeedsMoreContext
+                    };
+
+                    return new WorkExecutionResult
+                    {
+                        Success = outcome == WorkExecutionOutcome.Completed,
+                        Outcome = outcome,
+                        Summary = response.Summary ?? content,
+                        ModifiedFiles = response.ModifiedFiles ?? [],
+                        Questions = response.Questions ?? [],
+                        TokensUsed = tokensUsed
+                    };
+                }
+            }
+            catch (System.Text.Json.JsonException ex)
+            {
+                _logger.LogWarning(ex, "Failed to parse AI prompt response as JSON");
             }
         }
 

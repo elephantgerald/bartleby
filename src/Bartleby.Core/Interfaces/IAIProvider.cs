@@ -24,6 +24,21 @@ public interface IAIProvider
     /// Tests the connection to the AI provider.
     /// </summary>
     Task<bool> TestConnectionAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Executes a prompt directly with full control over system and user messages.
+    /// Used by WorkExecutor for transformation-specific prompts.
+    /// </summary>
+    /// <param name="systemPrompt">The system prompt defining AI behavior.</param>
+    /// <param name="userPrompt">The user prompt with task details.</param>
+    /// <param name="workingDirectory">The working directory for context.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The execution result.</returns>
+    Task<WorkExecutionResult> ExecutePromptAsync(
+        string systemPrompt,
+        string userPrompt,
+        string workingDirectory,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>
