@@ -4,6 +4,7 @@ using Bartleby.Core.Interfaces;
 using Bartleby.Infrastructure.Persistence;
 using Bartleby.Infrastructure.WorkSources;
 using Bartleby.Infrastructure.AIProviders;
+using Bartleby.Infrastructure.Git;
 using Bartleby.Infrastructure.Graph;
 using Bartleby.Services;
 using Bartleby.Services.Prompts;
@@ -42,6 +43,7 @@ public static class MauiProgram
         // Register Infrastructure Services (using stubs for MVP)
         builder.Services.AddSingleton<IWorkSource, StubWorkSource>();
         builder.Services.AddSingleton<IAIProvider, StubAIProvider>();
+        builder.Services.AddSingleton<IGitService, GitService>();
         builder.Services.AddSingleton<IGraphStore>(_ =>
         {
             var graphPath = Path.Combine(FileSystem.AppDataDirectory, "dependencies.puml");
