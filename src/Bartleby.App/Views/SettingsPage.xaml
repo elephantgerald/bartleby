@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Bartleby.App.ViewModels"
+             x:Class="Bartleby.App.Views.SettingsPage"
+             x:DataType="vm:SettingsViewModel"
+             Title="Settings">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="20">
+
+            <!-- Azure OpenAI Section -->
+            <Frame Padding="15">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Azure OpenAI" FontSize="18" FontAttributes="Bold"/>
+
+                    <Label Text="Endpoint"/>
+                    <Entry Text="{Binding AzureOpenAIEndpoint}"
+                           Placeholder="https://your-resource.openai.azure.com/"/>
+
+                    <Label Text="API Key"/>
+                    <Entry Text="{Binding AzureOpenAIApiKey}"
+                           IsPassword="True"
+                           Placeholder="Your API Key"/>
+
+                    <Label Text="Deployment Name"/>
+                    <Entry Text="{Binding AzureOpenAIDeploymentName}"
+                           Placeholder="gpt-4"/>
+
+                    <Button Text="Test Connection"
+                            Command="{Binding TestAIConnectionCommand}"
+                            HorizontalOptions="Start"/>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- GitHub Section -->
+            <Frame Padding="15">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="GitHub" FontSize="18" FontAttributes="Bold"/>
+
+                    <Label Text="Personal Access Token"/>
+                    <Entry Text="{Binding GitHubToken}"
+                           IsPassword="True"
+                           Placeholder="ghp_xxxx"/>
+
+                    <Label Text="Owner/Organization"/>
+                    <Entry Text="{Binding GitHubOwner}"
+                           Placeholder="username or org"/>
+
+                    <Label Text="Repository"/>
+                    <Entry Text="{Binding GitHubRepo}"
+                           Placeholder="repo-name"/>
+
+                    <Button Text="Test Connection"
+                            Command="{Binding TestWorkSourceConnectionCommand}"
+                            HorizontalOptions="Start"/>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Orchestrator Section -->
+            <Frame Padding="15">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Orchestrator" FontSize="18" FontAttributes="Bold"/>
+
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="Enable Orchestrator" VerticalOptions="Center"/>
+                        <Switch IsToggled="{Binding OrchestratorEnabled}"/>
+                    </HorizontalStackLayout>
+
+                    <Label Text="Check Interval (minutes)"/>
+                    <Entry Text="{Binding OrchestratorIntervalMinutes}"
+                           Keyboard="Numeric"/>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Status & Save -->
+            <Label Text="{Binding StatusMessage}"
+                   TextColor="{AppThemeBinding Light=Gray, Dark=LightGray}"
+                   HorizontalOptions="Center"/>
+
+            <Button Text="Save Settings"
+                    Command="{Binding SaveSettingsCommand}"
+                    IsEnabled="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"
+                    HorizontalOptions="Center"/>
+
+            <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"/>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

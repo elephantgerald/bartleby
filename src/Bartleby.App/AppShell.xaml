@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="Bartleby.App.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:Bartleby.App.Views"
+    Title="Bartleby">
+
+    <TabBar>
+        <ShellContent
+            Title="Dashboard"
+            Icon="{OnPlatform Default=''}"
+            ContentTemplate="{DataTemplate views:DashboardPage}"
+            Route="Dashboard" />
+
+        <ShellContent
+            Title="Work Items"
+            Icon="{OnPlatform Default=''}"
+            ContentTemplate="{DataTemplate views:WorkItemsPage}"
+            Route="WorkItems" />
+
+        <ShellContent
+            Title="Blocked"
+            Icon="{OnPlatform Default=''}"
+            ContentTemplate="{DataTemplate views:BlockedPage}"
+            Route="Blocked" />
+
+        <ShellContent
+            Title="Settings"
+            Icon="{OnPlatform Default=''}"
+            ContentTemplate="{DataTemplate views:SettingsPage}"
+            Route="Settings" />
+    </TabBar>
+
+</Shell>

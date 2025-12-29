@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Bartleby.App.ViewModels"
+             x:Class="Bartleby.App.Views.BlockedPage"
+             x:DataType="vm:BlockedViewModel"
+             Title="Blocked Items">
+
+    <Grid RowDefinitions="*,Auto" Padding="10">
+
+        <!-- Questions List -->
+        <CollectionView Grid.Row="0"
+                        ItemsSource="{Binding Questions}"
+                        SelectionMode="Single"
+                        SelectedItem="{Binding SelectedQuestion}">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="vm:BlockedQuestionDisplay">
+                    <Frame Margin="0,5" Padding="15"
+                           BackgroundColor="{AppThemeBinding Light=#FFF3E0, Dark=#3E2723}">
+                        <VerticalStackLayout Spacing="5">
+                            <Label Text="{Binding WorkItemTitle}"
+                                   FontSize="14"
+                                   TextColor="Gray"/>
+                            <Label Text="{Binding Question.Question}"
+                                   FontSize="16"
+                                   FontAttributes="Bold"/>
+                            <Label Text="{Binding Question.Context}"
+                                   FontSize="14"
+                                   TextColor="Gray"
+                                   IsVisible="{Binding Question.Context, Converter={StaticResource StringToBoolConverter}}"/>
+                        </VerticalStackLayout>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+
+            <CollectionView.EmptyView>
+                <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center">
+                    <Label Text="No blocked items"
+                           FontSize="18"
+                           TextColor="Gray"
+                           HorizontalOptions="Center"/>
+                    <Label Text="Great! Nothing needs your attention."
+                           TextColor="Gray"
+                           HorizontalOptions="Center"/>
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
+        </CollectionView>
+
+        <!-- Answer Input -->
+        <Frame Grid.Row="1" Padding="10" IsVisible="{Binding SelectedQuestion, Converter={StaticResource ObjectToBoolConverter}}">
+            <VerticalStackLayout Spacing="10">
+                <Label Text="Your Answer:" FontAttributes="Bold"/>
+                <Editor Text="{Binding AnswerText}"
+                        HeightRequest="100"
+                        Placeholder="Type your answer here..."/>
+                <Button Text="Submit Answer"
+                        Command="{Binding SubmitAnswerCommand}"
+                        HorizontalOptions="End"/>
+            </VerticalStackLayout>
+        </Frame>
+
+        <ActivityIndicator Grid.Row="0" IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"/>
+    </Grid>
+
+</ContentPage>
