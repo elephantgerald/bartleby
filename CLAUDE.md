@@ -66,9 +66,9 @@ dotnet test
 - `GitHubWorkSource` - GitHub integration using Octokit (42 tests)
 - `SyncService` - Bidirectional sync between GitHub and local store (35 tests)
 - `AzureOpenAIProvider` - Azure OpenAI integration with retry/rate limiting (19 tests)
+- `WorkExecutor` - Prompt templates and transformation orchestration (38 tests)
 
 **Not Yet Implemented:**
-- `WorkExecutor` - Prompt templates for task execution
 - `OrchestratorService` - Background service to pick up and execute work
 - `GitService` - Auto-commit completed work
 
@@ -187,10 +187,9 @@ The cached docs in `.context/milestones/` track the state of the codebase. When 
 
 ## Next Steps (Priority Order)
 
-1. Implement `WorkExecutor` with prompt templates (Story #13)
-2. Implement `OrchestratorService` as a background service (Story #14)
-3. Implement blocked work management (Story #15)
-4. Implement `GitService` with LibGit2Sharp (Story #16)
+1. Implement `OrchestratorService` as a background service (Story #14)
+2. Implement blocked work management (Story #15)
+3. Implement `GitService` with LibGit2Sharp (Story #16)
 
 ## Important Notes
 

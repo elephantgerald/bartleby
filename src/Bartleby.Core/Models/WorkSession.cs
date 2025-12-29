@@ -28,6 +28,12 @@ public class WorkSession
     public WorkSessionOutcome Outcome { get; set; } = WorkSessionOutcome.InProgress;
 
     /// <summary>
+    /// The transformation type that was performed in this session.
+    /// Used for provenance tracking.
+    /// </summary>
+    public TransformationType? TransformationType { get; set; }
+
+    /// <summary>
     /// Summary of what was accomplished in this session.
     /// </summary>
     public string? Summary { get; set; }

@@ -15,6 +15,16 @@ namespace Bartleby.Infrastructure.AIProviders;
 /// </summary>
 public class AzureOpenAIProvider : IAIProvider
 {
+    /// <summary>
+    /// Outcome values expected from AI responses. These must match the prompts in PromptTemplateProvider.
+    /// </summary>
+    private static class OutcomeValues
+    {
+        public const string Completed = "completed";
+        public const string Blocked = "blocked";
+        public const string NeedsContext = "needs_context";
+    }
+
     private static readonly ResiliencePipeline<ChatCompletion> s_resiliencePipeline = CreateResiliencePipeline();
 
     private static readonly ChatCompletionOptions s_chatCompletionOptions = new()
@@ -60,58 +70,27 @@ public class AzureOpenAIProvider : IAIProvider
         ArgumentNullException.ThrowIfNull(workItem);
         ArgumentException.ThrowIfNullOrWhiteSpace(workingDirectory);
 
-        try
-        {
-            var settings = await _settingsRepository.GetSettingsAsync(cancellationToken);
-            ValidateSettings(settings);
-
-            var chatClient = CreateChatClientWrapper(settings);
-            var messages = BuildPromptMessages(workItem, workingDirectory);
-
-            _logger.LogInformation(
-                "Executing work on item {WorkItemId}: {WorkItemTitle}",
-                workItem.Id,
-                workItem.Title);
-
-            var completion = await s_resiliencePipeline.ExecuteAsync(
-                async ct => await chatClient.CompleteChatAsync(messages, s_chatCompletionOptions, ct),
-                cancellationToken);
-
-            return ParseCompletionResult(completion, workItem);
-        }
-        catch (ClientResultException ex) when (IsAuthenticationError(ex))
-        {
-            _logger.LogError(ex, "Authentication failed for Azure OpenAI");
-            return new WorkExecutionResult
+        return await ExecuteWithErrorHandlingAsync(
+            async () =>
             {
-                Success = false,
-                Outcome = WorkExecutionOutcome.Failed,
-                ErrorMessage = "Azure OpenAI authentication failed. Please check your API key and endpoint.",
-                TokensUsed = 0
-            };
-        }
-        catch (ClientResultException ex) when (IsRateLimitError(ex))
-        {
-            _logger.LogWarning(ex, "Rate limit exceeded for Azure OpenAI after retries");
-            return new WorkExecutionResult
-            {
-                Success = false,
-                Outcome = WorkExecutionOutcome.Failed,
-                ErrorMessage = "Rate limit exceeded. Please try again later.",
-                TokensUsed = 0
-            };
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error executing work on item {WorkItemId}", workItem.Id);
-            return new WorkExecutionResult
-            {
-                Success = false,
-                Outcome = WorkExecutionOutcome.Failed,
-                ErrorMessage = $"Error executing work: {ex.Message}",
-                TokensUsed = 0
-            };
-        }
+                var settings = await _settingsRepository.GetSettingsAsync(cancellationToken);
+                ValidateSettings(settings);
+
+                var chatClient = CreateChatClientWrapper(settings);
+                var messages = BuildPromptMessages(workItem, workingDirectory);
+
+                _logger.LogInformation(
+                    "Executing work on item {WorkItemId}: {WorkItemTitle}",
+                    workItem.Id,
+                    workItem.Title);
+
+                var completion = await s_resiliencePipeline.ExecuteAsync(
+                    async ct => await chatClient.CompleteChatAsync(messages, s_chatCompletionOptions, ct),
+                    cancellationToken);
+
+                return ParseCompletionResult(completion, workItem);
+            },
+            $"work on item {workItem.Id}");
     }
 
     public async Task<bool> TestConnectionAsync(CancellationToken cancellationToken = default)
@@ -138,6 +117,83 @@ public class AzureOpenAIProvider : IAIProvider
         {
             _logger.LogWarning(ex, "Azure OpenAI connection test failed");
             return false;
+        }
+    }
+
+    public async Task<WorkExecutionResult> ExecutePromptAsync(
+        string systemPrompt,
+        string userPrompt,
+        string workingDirectory,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(systemPrompt);
+        ArgumentException.ThrowIfNullOrWhiteSpace(userPrompt);
+        ArgumentException.ThrowIfNullOrWhiteSpace(workingDirectory);
+
+        return await ExecuteWithErrorHandlingAsync(
+            async () =>
+            {
+                var settings = await _settingsRepository.GetSettingsAsync(cancellationToken);
+                ValidateSettings(settings);
+
+                var chatClient = CreateChatClientWrapper(settings);
+                var messages = new List<ChatMessage>
+                {
+                    new SystemChatMessage(systemPrompt),
+                    new UserChatMessage(userPrompt)
+                };
+
+                _logger.LogInformation("Executing prompt with working directory: {WorkingDirectory}", workingDirectory);
+
+                var completion = await s_resiliencePipeline.ExecuteAsync(
+                    async ct => await chatClient.CompleteChatAsync(messages, s_chatCompletionOptions, ct),
+                    cancellationToken);
+
+                return ParseCompletionResultForPrompt(completion);
+            },
+            "prompt");
+    }
+
+    private async Task<WorkExecutionResult> ExecuteWithErrorHandlingAsync(
+        Func<Task<WorkExecutionResult>> operation,
+        string operationContext)
+    {
+        try
+        {
+            return await operation();
+        }
+        catch (ClientResultException ex) when (IsAuthenticationError(ex))
+        {
+            _logger.LogError(ex, "Authentication failed for Azure OpenAI");
+            return new WorkExecutionResult
+            {
+                Success = false,
+                Outcome = WorkExecutionOutcome.Failed,
+                ErrorMessage = "Azure OpenAI authentication failed. Please check your API key and endpoint.",
+                TokensUsed = 0
+            };
+        }
+        catch (ClientResultException ex) when (IsRateLimitError(ex))
+        {
+            _logger.LogWarning(ex, "Rate limit exceeded for Azure OpenAI after retries");
+            return new WorkExecutionResult
+            {
+                Success = false,
+                Outcome = WorkExecutionOutcome.Failed,
+                ErrorMessage = "Rate limit exceeded. Please try again later.",
+                TokensUsed = 0
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error executing {OperationContext}", operationContext);
+            return new WorkExecutionResult
+            {
+                Success = false,
+                Outcome = WorkExecutionOutcome.Failed,
+                ErrorMessage = $"Error executing {operationContext}: {ex.Message}",
+                TokensUsed = 0
+            };
         }
     }
 
@@ -244,13 +300,7 @@ public class AzureOpenAIProvider : IAIProvider
 
                 if (response != null)
                 {
-                    var outcome = response.Outcome?.ToLowerInvariant() switch
-                    {
-                        "completed" => WorkExecutionOutcome.Completed,
-                        "blocked" => WorkExecutionOutcome.Blocked,
-                        "needs_context" => WorkExecutionOutcome.NeedsMoreContext,
-                        _ => WorkExecutionOutcome.NeedsMoreContext  // Safer default for unknown outcomes
-                    };
+                    var outcome = ParseOutcome(response.Outcome);
 
                     return new WorkExecutionResult
                     {
@@ -265,11 +315,18 @@ public class AzureOpenAIProvider : IAIProvider
             }
             catch (System.Text.Json.JsonException ex)
             {
-                _logger.LogWarning(ex, "Failed to parse AI response as JSON");
+                _logger.LogWarning(
+                    ex,
+                    "Failed to parse AI response as JSON. Raw content: {Content}",
+                    content);
             }
         }
 
         // Fallback: could not parse response - safer to mark as needing review
+        _logger.LogWarning(
+            "Could not parse AI response for work item {WorkItemId}. Raw output preserved in summary.",
+            workItem.Id);
+
         return new WorkExecutionResult
         {
             Success = false,
@@ -278,6 +335,74 @@ public class AzureOpenAIProvider : IAIProvider
             ModifiedFiles = [],
             Questions = [],
             TokensUsed = tokensUsed
+        };
+    }
+
+    private WorkExecutionResult ParseCompletionResultForPrompt(ChatCompletion completion)
+    {
+        var content = completion.Content.FirstOrDefault()?.Text ?? string.Empty;
+        var tokensUsed = CalculateTokensUsed(completion);
+
+        _logger.LogDebug("Received prompt response: {TokensUsed} tokens used", tokensUsed);
+
+        // Try to parse as JSON response using progressively more permissive extraction
+        var jsonContent = ExtractJsonContent(content);
+
+        if (jsonContent != null)
+        {
+            try
+            {
+                var response = System.Text.Json.JsonSerializer.Deserialize<AiResponsePayload>(
+                    jsonContent,
+                    new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                if (response != null)
+                {
+                    var outcome = ParseOutcome(response.Outcome);
+
+                    return new WorkExecutionResult
+                    {
+                        Success = outcome == WorkExecutionOutcome.Completed,
+                        Outcome = outcome,
+                        Summary = response.Summary ?? content,
+                        ModifiedFiles = response.ModifiedFiles ?? [],
+                        Questions = response.Questions ?? [],
+                        TokensUsed = tokensUsed
+                    };
+                }
+            }
+            catch (System.Text.Json.JsonException ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Failed to parse AI prompt response as JSON. Raw content: {Content}",
+                    content);
+            }
+        }
+
+        // Fallback: could not parse response - safer to mark as needing review
+        _logger.LogWarning(
+            "Could not parse AI prompt response. Raw output preserved in summary.");
+
+        return new WorkExecutionResult
+        {
+            Success = false,
+            Outcome = WorkExecutionOutcome.NeedsMoreContext,
+            Summary = $"Could not parse AI response. Raw output: {content}",
+            ModifiedFiles = [],
+            Questions = [],
+            TokensUsed = tokensUsed
+        };
+    }
+
+    private static WorkExecutionOutcome ParseOutcome(string? outcome)
+    {
+        return outcome?.ToLowerInvariant() switch
+        {
+            OutcomeValues.Completed => WorkExecutionOutcome.Completed,
+            OutcomeValues.Blocked => WorkExecutionOutcome.Blocked,
+            OutcomeValues.NeedsContext => WorkExecutionOutcome.NeedsMoreContext,
+            _ => WorkExecutionOutcome.NeedsMoreContext // Safer default for unknown outcomes
         };
     }
 
