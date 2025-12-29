@@ -15,13 +15,13 @@ public class WorkItemRepository : IWorkItemRepository
     public Task<WorkItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var item = _context.WorkItems.FindById(id);
-        return Task.FromResult(item);
+        return Task.FromResult<WorkItem?>(item);
     }
 
     public Task<WorkItem?> GetByExternalIdAsync(string source, string externalId, CancellationToken cancellationToken = default)
     {
         var item = _context.WorkItems.FindOne(x => x.Source == source && x.ExternalId == externalId);
-        return Task.FromResult(item);
+        return Task.FromResult<WorkItem?>(item);
     }
 
     public Task<IEnumerable<WorkItem>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -70,7 +70,7 @@ public class BlockedQuestionRepository : IBlockedQuestionRepository
     public Task<BlockedQuestion?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var item = _context.BlockedQuestions.FindById(id);
-        return Task.FromResult(item);
+        return Task.FromResult<BlockedQuestion?>(item);
     }
 
     public Task<IEnumerable<BlockedQuestion>> GetByWorkItemIdAsync(Guid workItemId, CancellationToken cancellationToken = default)
@@ -117,7 +117,7 @@ public class WorkSessionRepository : IWorkSessionRepository
     public Task<WorkSession?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var item = _context.WorkSessions.FindById(id);
-        return Task.FromResult(item);
+        return Task.FromResult<WorkSession?>(item);
     }
 
     public Task<IEnumerable<WorkSession>> GetByWorkItemIdAsync(Guid workItemId, CancellationToken cancellationToken = default)

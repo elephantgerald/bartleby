@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using Bartleby.Core.Interfaces;
 using Bartleby.Core.Models;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Bartleby.Services;
 
@@ -22,6 +24,7 @@ public class SyncService : ISyncService
 {
     private readonly IWorkSource _workSource;
     private readonly IWorkItemRepository _workItemRepository;
+    private readonly ILogger<SyncService> _logger;
     private readonly object _syncLock = new();
     private bool _isSyncing;
 
@@ -37,10 +40,14 @@ public class SyncService : ISyncService
     public event EventHandler<SyncCompletedEventArgs>? SyncCompleted;
     public event EventHandler<ItemSyncedEventArgs>? ItemSynced;
 
-    public SyncService(IWorkSource workSource, IWorkItemRepository workItemRepository)
+    public SyncService(
+        IWorkSource workSource,
+        IWorkItemRepository workItemRepository,
+        ILogger<SyncService>? logger = null)
     {
         _workSource = workSource ?? throw new ArgumentNullException(nameof(workSource));
         _workItemRepository = workItemRepository ?? throw new ArgumentNullException(nameof(workItemRepository));
+        _logger = logger ?? NullLogger<SyncService>.Instance;
     }
 
     public async Task<SyncResult> SyncAsync(CancellationToken cancellationToken = default)
@@ -59,6 +66,7 @@ public class SyncService : ISyncService
 
         try
         {
+            _logger.LogInformation("Starting sync from {SourceName}", _workSource.Name);
             SyncStarted?.Invoke(this, new SyncStartedEventArgs { SourceName = _workSource.Name });
 
             var result = await PerformSyncAsync(cancellationToken);
@@ -69,6 +77,16 @@ public class SyncService : ISyncService
             if (finalResult.Success)
             {
                 LastSyncTime = DateTime.UtcNow;
+                _logger.LogInformation(
+                    "Sync completed successfully in {Duration:N0}ms: {Added} added, {Updated} updated, {Removed} removed",
+                    stopwatch.ElapsedMilliseconds,
+                    finalResult.ItemsAdded,
+                    finalResult.ItemsUpdated,
+                    finalResult.ItemsRemoved);
+            }
+            else
+            {
+                _logger.LogWarning("Sync completed with errors: {ErrorMessage}", finalResult.ErrorMessage);
             }
 
             SyncCompleted?.Invoke(this, new SyncCompletedEventArgs { Result = finalResult });
@@ -78,6 +96,7 @@ public class SyncService : ISyncService
         catch (OperationCanceledException)
         {
             stopwatch.Stop();
+            _logger.LogInformation("Sync was cancelled after {Duration:N0}ms", stopwatch.ElapsedMilliseconds);
             var result = SyncResult.Failed("Sync was cancelled.", stopwatch.Elapsed);
             SyncCompleted?.Invoke(this, new SyncCompletedEventArgs { Result = result });
             return result;
@@ -85,6 +104,7 @@ public class SyncService : ISyncService
         catch (Exception ex)
         {
             stopwatch.Stop();
+            _logger.LogError(ex, "Sync failed after {Duration:N0}ms", stopwatch.ElapsedMilliseconds);
             var result = SyncResult.Failed($"Sync failed: {ex.Message}", stopwatch.Elapsed);
             SyncCompleted?.Invoke(this, new SyncCompletedEventArgs { Result = result });
             return result;
@@ -104,12 +124,15 @@ public class SyncService : ISyncService
         var errors = new List<string>();
 
         // Step 1: Fetch items from the source (with null guard - Fix #1)
+        _logger.LogDebug("Fetching items from remote source");
         var remoteItems = ((await _workSource.SyncAsync(cancellationToken)) ?? []).ToList();
+        _logger.LogDebug("Fetched {Count} items from remote source", remoteItems.Count);
 
         // Step 2: Get all local items for this source (with null guard - Fix #1)
         var localItems = ((await _workItemRepository.GetAllAsync(cancellationToken)) ?? [])
             .Where(w => w.Source == _workSource.Name)
             .ToList();
+        _logger.LogDebug("Found {Count} existing local items for source {SourceName}", localItems.Count, _workSource.Name);
 
         // Build lookup by ExternalId for local items (handling duplicates - Fix #2)
         // If duplicates exist, prefer the most recently updated item
@@ -173,6 +196,7 @@ public class SyncService : ISyncService
                         }
                         catch (Exception ex)
                         {
+                            _logger.LogWarning(ex, "Failed to push status for work item '{Title}' (ID: {ExternalId})", updated.Title, updated.ExternalId);
                             errors.Add($"Failed to push status for '{updated.Title}': {ex.Message}");
                         }
                     }
@@ -192,6 +216,7 @@ public class SyncService : ISyncService
             }
             catch (Exception ex)
             {
+                _logger.LogWarning(ex, "Failed to sync item '{Title}' (ExternalId: {ExternalId})", remoteItem.Title, remoteItem.ExternalId);
                 errors.Add($"Failed to sync item '{remoteItem.Title}' (ExternalId: {remoteItem.ExternalId}): {ex.Message}");
             }
         }
@@ -223,6 +248,7 @@ public class SyncService : ISyncService
                 }
                 catch (Exception ex)
                 {
+                    _logger.LogWarning(ex, "Failed to remove item '{Title}' (ID: {Id})", localItem.Title, localItem.Id);
                     errors.Add($"Failed to remove item '{localItem.Title}': {ex.Message}");
                 }
             }

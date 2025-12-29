@@ -97,7 +97,7 @@ public class GitHubWorkSourceTests
         var issue = CreateIssue(1, "Test Issue", "Test body");
 
         _gitHubApiClientMock
-            .Setup(c => c.GetIssuesAsync(_defaultSettings.GitHubOwner, _defaultSettings.GitHubRepo, It.IsAny<CancellationToken>()))
+            .Setup(c => c.GetIssuesAsync(_defaultSettings.GitHubOwner!, _defaultSettings.GitHubRepo!, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<GitHubIssue> { issue });
 
         // Act
@@ -587,7 +587,9 @@ public class GitHubWorkSourceTests
     public void Constructor_WithNullClientFactory_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new GitHubWorkSource(_settingsRepositoryMock.Object, null!));
+        Assert.Throws<ArgumentNullException>(() => new GitHubWorkSource(
+            _settingsRepositoryMock.Object,
+            (Func<string?, IGitHubApiClient>)null!));
     }
 
     #endregion

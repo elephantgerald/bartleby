@@ -1,5 +1,7 @@
 using Bartleby.Core.Interfaces;
 using Bartleby.Core.Models;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Bartleby.Infrastructure.WorkSources;
 
@@ -10,6 +12,7 @@ public class GitHubWorkSource : IWorkSource
 {
     private readonly ISettingsRepository _settingsRepository;
     private readonly Func<string?, IGitHubApiClient> _clientFactory;
+    private readonly ILogger<GitHubWorkSource> _logger;
 
     private IGitHubApiClient? _client;
     private string? _lastToken;
@@ -19,8 +22,10 @@ public class GitHubWorkSource : IWorkSource
     /// <summary>
     /// Creates a new GitHubWorkSource with the default client factory.
     /// </summary>
-    public GitHubWorkSource(ISettingsRepository settingsRepository)
-        : this(settingsRepository, token => new OctokitGitHubApiClient(token))
+    public GitHubWorkSource(
+        ISettingsRepository settingsRepository,
+        ILogger<GitHubWorkSource>? logger = null)
+        : this(settingsRepository, token => new OctokitGitHubApiClient(token), logger)
     {
     }
 
@@ -29,10 +34,12 @@ public class GitHubWorkSource : IWorkSource
     /// </summary>
     public GitHubWorkSource(
         ISettingsRepository settingsRepository,
-        Func<string?, IGitHubApiClient> clientFactory)
+        Func<string?, IGitHubApiClient> clientFactory,
+        ILogger<GitHubWorkSource>? logger = null)
     {
         _settingsRepository = settingsRepository ?? throw new ArgumentNullException(nameof(settingsRepository));
         _clientFactory = clientFactory ?? throw new ArgumentNullException(nameof(clientFactory));
+        _logger = logger ?? NullLogger<GitHubWorkSource>.Instance;
     }
 
     public async Task<IEnumerable<WorkItem>> SyncAsync(CancellationToken cancellationToken = default)
@@ -41,8 +48,11 @@ public class GitHubWorkSource : IWorkSource
 
         if (string.IsNullOrEmpty(settings.GitHubOwner) || string.IsNullOrEmpty(settings.GitHubRepo))
         {
+            _logger.LogDebug("GitHub sync skipped: Owner or Repo not configured");
             return [];
         }
+
+        _logger.LogDebug("Syncing work items from GitHub: {Owner}/{Repo}", settings.GitHubOwner, settings.GitHubRepo);
 
         var client = GetClient(settings.GitHubToken);
         var issues = await client.GetIssuesAsync(settings.GitHubOwner, settings.GitHubRepo, cancellationToken);
@@ -131,14 +141,28 @@ public class GitHubWorkSource : IWorkSource
 
             if (string.IsNullOrEmpty(settings.GitHubOwner) || string.IsNullOrEmpty(settings.GitHubRepo))
             {
+                _logger.LogDebug("GitHub connection test failed: Owner or Repo not configured");
                 return false;
             }
 
+            _logger.LogDebug("Testing GitHub connection to {Owner}/{Repo}", settings.GitHubOwner, settings.GitHubRepo);
             var client = GetClient(settings.GitHubToken);
-            return await client.TestConnectionAsync(settings.GitHubOwner, settings.GitHubRepo, cancellationToken);
+            var result = await client.TestConnectionAsync(settings.GitHubOwner, settings.GitHubRepo, cancellationToken);
+
+            if (result)
+            {
+                _logger.LogDebug("GitHub connection test successful");
+            }
+            else
+            {
+                _logger.LogWarning("GitHub connection test failed: Repository not accessible");
+            }
+
+            return result;
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, "GitHub connection test failed with exception");
             return false;
         }
     }

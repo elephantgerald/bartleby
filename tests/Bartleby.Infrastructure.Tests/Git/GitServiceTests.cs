@@ -273,7 +273,7 @@ public class GitServiceTests
         var branchesMock = new Mock<BranchCollection>();
         branchesMock
             .Setup(b => b[expectedBranchName])
-            .Returns((Branch?)null);
+            .Returns((Branch)null!);
 
         var newBranchMock = new Mock<Branch>();
         newBranchMock.Setup(b => b.FriendlyName).Returns(expectedBranchName);
@@ -554,7 +554,7 @@ public class GitServiceTests
     {
         // Arrange
         var remotesMock = new Mock<RemoteCollection>();
-        remotesMock.Setup(r => r["nonexistent"]).Returns((Remote?)null);
+        remotesMock.Setup(r => r["nonexistent"]).Returns((Remote)null!);
 
         var networkMock = new Mock<Network>();
         networkMock.Setup(n => n.Remotes).Returns(remotesMock.Object);
@@ -637,8 +637,8 @@ public class GitServiceTests
         var configEntry = CreateConfigEntry("user.name", "Bartleby");
         var emailEntry = CreateConfigEntry("user.email", "bartleby@test.com");
 
-        configMock.Setup(c => c.Get<string>("user.name")).Returns(configEntry);
-        configMock.Setup(c => c.Get<string>("user.email")).Returns(emailEntry);
+        configMock.Setup(c => c.Get<string>("user.name")).Returns(configEntry!);
+        configMock.Setup(c => c.Get<string>("user.email")).Returns(emailEntry!);
 
         _repositoryMock.Setup(r => r.Config).Returns(configMock.Object);
 
@@ -678,7 +678,7 @@ public class GitServiceTests
     {
         var headMock = new Mock<Branch>();
         headMock.Setup(h => h.FriendlyName).Returns(currentBranch);
-        headMock.Setup(h => h.TrackedBranch).Returns((Branch?)null);
+        headMock.Setup(h => h.TrackedBranch).Returns((Branch)null!);
 
         var statusMock = new Mock<RepositoryStatus>();
         statusMock.Setup(s => s.IsDirty).Returns(hasModified || hasStaged || hasUntracked);
