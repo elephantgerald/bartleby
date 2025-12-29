@@ -1,4 +1,5 @@
 using System.ClientModel;
+using System.Text.RegularExpressions;
 using Azure.AI.OpenAI;
 using Bartleby.Core.Interfaces;
 using Bartleby.Core.Models;
@@ -14,10 +15,17 @@ namespace Bartleby.Infrastructure.AIProviders;
 /// </summary>
 public class AzureOpenAIProvider : IAIProvider
 {
+    private static readonly ResiliencePipeline<ChatCompletion> s_resiliencePipeline = CreateResiliencePipeline();
+
+    private static readonly ChatCompletionOptions s_chatCompletionOptions = new()
+    {
+        MaxOutputTokenCount = 4000,
+        Temperature = 0.3f
+    };
+
     private readonly ISettingsRepository _settingsRepository;
     private readonly ILogger<AzureOpenAIProvider> _logger;
     private readonly Func<AppSettings, IChatClientWrapper>? _chatClientFactory;
-    private readonly ResiliencePipeline<ChatCompletion> _resiliencePipeline;
 
     public string Name => "Azure OpenAI";
 
@@ -42,7 +50,6 @@ public class AzureOpenAIProvider : IAIProvider
         _settingsRepository = settingsRepository ?? throw new ArgumentNullException(nameof(settingsRepository));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _chatClientFactory = chatClientFactory;
-        _resiliencePipeline = CreateResiliencePipeline();
     }
 
     public async Task<WorkExecutionResult> ExecuteWorkAsync(
@@ -66,8 +73,8 @@ public class AzureOpenAIProvider : IAIProvider
                 workItem.Id,
                 workItem.Title);
 
-            var completion = await _resiliencePipeline.ExecuteAsync(
-                async ct => await chatClient.CompleteChatAsync(messages, ct),
+            var completion = await s_resiliencePipeline.ExecuteAsync(
+                async ct => await chatClient.CompleteChatAsync(messages, s_chatCompletionOptions, ct),
                 cancellationToken);
 
             return ParseCompletionResult(completion, workItem);
@@ -122,7 +129,7 @@ public class AzureOpenAIProvider : IAIProvider
                 new UserChatMessage("Say 'OK' if you can hear me.")
             };
 
-            await chatClient.CompleteChatAsync(messages, cancellationToken);
+            await chatClient.CompleteChatAsync(messages, null, cancellationToken);
 
             _logger.LogInformation("Azure OpenAI connection test successful");
             return true;
@@ -154,6 +161,13 @@ public class AzureOpenAIProvider : IAIProvider
         if (string.IsNullOrWhiteSpace(settings.AzureOpenAIEndpoint))
         {
             throw new InvalidOperationException("Azure OpenAI endpoint is not configured.");
+        }
+
+        if (!Uri.TryCreate(settings.AzureOpenAIEndpoint, UriKind.Absolute, out var uri)
+            || (uri.Scheme != "https" && uri.Scheme != "http"))
+        {
+            throw new InvalidOperationException(
+                $"Azure OpenAI endpoint '{settings.AzureOpenAIEndpoint}' is not a valid URL.");
         }
 
         if (string.IsNullOrWhiteSpace(settings.AzureOpenAIApiKey))
@@ -217,15 +231,13 @@ public class AzureOpenAIProvider : IAIProvider
             workItem.Id,
             tokensUsed);
 
-        // Try to parse as JSON response
-        try
-        {
-            var jsonStart = content.IndexOf('{');
-            var jsonEnd = content.LastIndexOf('}');
+        // Try to parse as JSON response using progressively more permissive extraction
+        var jsonContent = ExtractJsonContent(content);
 
-            if (jsonStart >= 0 && jsonEnd > jsonStart)
+        if (jsonContent != null)
+        {
+            try
             {
-                var jsonContent = content[jsonStart..(jsonEnd + 1)];
                 var response = System.Text.Json.JsonSerializer.Deserialize<AiResponsePayload>(
                     jsonContent,
                     new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -237,7 +249,7 @@ public class AzureOpenAIProvider : IAIProvider
                         "completed" => WorkExecutionOutcome.Completed,
                         "blocked" => WorkExecutionOutcome.Blocked,
                         "needs_context" => WorkExecutionOutcome.NeedsMoreContext,
-                        _ => WorkExecutionOutcome.Completed
+                        _ => WorkExecutionOutcome.NeedsMoreContext  // Safer default for unknown outcomes
                     };
 
                     return new WorkExecutionResult
@@ -251,22 +263,66 @@ public class AzureOpenAIProvider : IAIProvider
                     };
                 }
             }
-        }
-        catch (System.Text.Json.JsonException ex)
-        {
-            _logger.LogWarning(ex, "Failed to parse AI response as JSON, using raw content");
+            catch (System.Text.Json.JsonException ex)
+            {
+                _logger.LogWarning(ex, "Failed to parse AI response as JSON");
+            }
         }
 
-        // Fallback: treat raw response as completed
+        // Fallback: could not parse response - safer to mark as needing review
         return new WorkExecutionResult
         {
-            Success = true,
-            Outcome = WorkExecutionOutcome.Completed,
-            Summary = content,
+            Success = false,
+            Outcome = WorkExecutionOutcome.NeedsMoreContext,
+            Summary = $"Could not parse AI response. Raw output: {content}",
             ModifiedFiles = [],
             Questions = [],
             TokensUsed = tokensUsed
         };
+    }
+
+    /// <summary>
+    /// Attempts to extract JSON content from AI response using progressively more permissive strategies:
+    /// 1. Try parsing the entire content directly
+    /// 2. Look for JSON in markdown code fences (```json ... ``` or ``` ... ```)
+    /// 3. Fall back to finding balanced braces
+    /// </summary>
+    private static string? ExtractJsonContent(string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return null;
+        }
+
+        // Strategy 1: Try to parse the entire content directly (trimmed)
+        var trimmed = content.Trim();
+        if (trimmed.StartsWith('{') && trimmed.EndsWith('}'))
+        {
+            return trimmed;
+        }
+
+        // Strategy 2: Look for JSON in markdown code fences
+        // Matches ```json ... ``` or ``` ... ```
+        var codeFenceMatch = Regex.Match(
+            content,
+            @"```(?:json)?\s*\n?(\{[\s\S]*?\})\s*\n?```",
+            RegexOptions.IgnoreCase);
+
+        if (codeFenceMatch.Success)
+        {
+            return codeFenceMatch.Groups[1].Value;
+        }
+
+        // Strategy 3: Fall back to finding first { and last } but validate it looks like JSON
+        var jsonStart = content.IndexOf('{');
+        var jsonEnd = content.LastIndexOf('}');
+
+        if (jsonStart >= 0 && jsonEnd > jsonStart)
+        {
+            return content[jsonStart..(jsonEnd + 1)];
+        }
+
+        return null;
     }
 
     private static int CalculateTokensUsed(ChatCompletion completion)
@@ -279,7 +335,7 @@ public class AzureOpenAIProvider : IAIProvider
         return 0;
     }
 
-    private ResiliencePipeline<ChatCompletion> CreateResiliencePipeline()
+    private static ResiliencePipeline<ChatCompletion> CreateResiliencePipeline()
     {
         return new ResiliencePipelineBuilder<ChatCompletion>()
             .AddRetry(new RetryStrategyOptions<ChatCompletion>

@@ -8,10 +8,11 @@ namespace Bartleby.Infrastructure.AIProviders;
 public interface IChatClientWrapper
 {
     /// <summary>
-    /// Sends a chat completion request.
+    /// Sends a chat completion request with optional options.
     /// </summary>
     Task<ChatCompletion> CompleteChatAsync(
         IEnumerable<ChatMessage> messages,
+        ChatCompletionOptions? options = null,
         CancellationToken cancellationToken = default);
 }
 
@@ -29,9 +30,10 @@ internal sealed class ChatClientWrapper : IChatClientWrapper
 
     public async Task<ChatCompletion> CompleteChatAsync(
         IEnumerable<ChatMessage> messages,
+        ChatCompletionOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        var response = await _chatClient.CompleteChatAsync(messages, cancellationToken: cancellationToken);
+        var response = await _chatClient.CompleteChatAsync(messages, options, cancellationToken);
         return response.Value;
     }
 }

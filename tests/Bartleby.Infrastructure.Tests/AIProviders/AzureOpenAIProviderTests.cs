@@ -139,7 +139,7 @@ public class AzureOpenAIProviderTests
             """, inputTokens: 100, outputTokens: 50);
 
         _chatClientMock
-            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<CancellationToken>()))
+            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<ChatCompletionOptions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(completion);
 
         // Act
@@ -168,7 +168,7 @@ public class AzureOpenAIProviderTests
             """);
 
         _chatClientMock
-            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<CancellationToken>()))
+            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<ChatCompletionOptions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(completion);
 
         // Act
@@ -196,7 +196,7 @@ public class AzureOpenAIProviderTests
             """);
 
         _chatClientMock
-            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<CancellationToken>()))
+            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<ChatCompletionOptions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(completion);
 
         // Act
@@ -208,42 +208,44 @@ public class AzureOpenAIProviderTests
     }
 
     [Fact]
-    public async Task ExecuteWorkAsync_WhenApiReturnsPlainText_TreatsAsCompleted()
+    public async Task ExecuteWorkAsync_WhenApiReturnsPlainText_ReturnsNeedsMoreContext()
     {
         // Arrange
         var workItem = CreateWorkItem();
         var completion = CreateChatCompletion("I completed the task successfully.");
 
         _chatClientMock
-            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<CancellationToken>()))
+            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<ChatCompletionOptions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(completion);
 
         // Act
         var result = await _sut.ExecuteWorkAsync(workItem, "/work");
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Outcome.Should().Be(WorkExecutionOutcome.Completed);
-        result.Summary.Should().Be("I completed the task successfully.");
+        result.Success.Should().BeFalse();
+        result.Outcome.Should().Be(WorkExecutionOutcome.NeedsMoreContext);
+        result.Summary.Should().Contain("Could not parse AI response");
+        result.Summary.Should().Contain("I completed the task successfully.");
     }
 
     [Fact]
-    public async Task ExecuteWorkAsync_WhenApiReturnsInvalidJson_FallsBackToRawContent()
+    public async Task ExecuteWorkAsync_WhenApiReturnsInvalidJson_ReturnsNeedsMoreContext()
     {
         // Arrange
         var workItem = CreateWorkItem();
         var completion = CreateChatCompletion("Here is a partial json { broken...");
 
         _chatClientMock
-            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<CancellationToken>()))
+            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<ChatCompletionOptions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(completion);
 
         // Act
         var result = await _sut.ExecuteWorkAsync(workItem, "/work");
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Outcome.Should().Be(WorkExecutionOutcome.Completed);
+        result.Success.Should().BeFalse();
+        result.Outcome.Should().Be(WorkExecutionOutcome.NeedsMoreContext);
+        result.Summary.Should().Contain("Could not parse AI response");
         result.Summary.Should().Contain("partial json");
     }
 
@@ -258,7 +260,7 @@ public class AzureOpenAIProviderTests
         var workItem = CreateWorkItem();
 
         _chatClientMock
-            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<CancellationToken>()))
+            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<ChatCompletionOptions>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(CreateClientResultException(401));
 
         // Act
@@ -277,7 +279,7 @@ public class AzureOpenAIProviderTests
         var workItem = CreateWorkItem();
 
         _chatClientMock
-            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<CancellationToken>()))
+            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<ChatCompletionOptions>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(CreateClientResultException(403));
 
         // Act
@@ -295,7 +297,7 @@ public class AzureOpenAIProviderTests
         var workItem = CreateWorkItem();
 
         _chatClientMock
-            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<CancellationToken>()))
+            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<ChatCompletionOptions>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(CreateClientResultException(429));
 
         // Act
@@ -314,7 +316,7 @@ public class AzureOpenAIProviderTests
         var workItem = CreateWorkItem();
 
         _chatClientMock
-            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<CancellationToken>()))
+            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<ChatCompletionOptions>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Something went wrong"));
 
         // Act
@@ -337,7 +339,7 @@ public class AzureOpenAIProviderTests
         var completion = CreateChatCompletion("OK");
 
         _chatClientMock
-            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<CancellationToken>()))
+            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<ChatCompletionOptions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(completion);
 
         // Act
@@ -352,7 +354,7 @@ public class AzureOpenAIProviderTests
     {
         // Arrange
         _chatClientMock
-            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<CancellationToken>()))
+            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<ChatCompletionOptions>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Connection failed"));
 
         // Act
@@ -390,7 +392,7 @@ public class AzureOpenAIProviderTests
             outputTokens: 200);
 
         _chatClientMock
-            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<CancellationToken>()))
+            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<ChatCompletionOptions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(completion);
 
         // Act
@@ -398,6 +400,90 @@ public class AzureOpenAIProviderTests
 
         // Assert
         result.TokensUsed.Should().Be(700);
+    }
+
+    #endregion
+
+    #region JSON Extraction Edge Cases
+
+    [Fact]
+    public async Task ExecuteWorkAsync_WhenApiReturnsJsonInMarkdownCodeFence_ParsesCorrectly()
+    {
+        // Arrange
+        var workItem = CreateWorkItem();
+        var completion = CreateChatCompletion("""
+            Here's my response:
+            ```json
+            {
+                "outcome": "completed",
+                "summary": "Fixed the bug",
+                "modified_files": ["src/fix.cs"],
+                "questions": []
+            }
+            ```
+            """);
+
+        _chatClientMock
+            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<ChatCompletionOptions>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(completion);
+
+        // Act
+        var result = await _sut.ExecuteWorkAsync(workItem, "/work");
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Outcome.Should().Be(WorkExecutionOutcome.Completed);
+        result.Summary.Should().Be("Fixed the bug");
+        result.ModifiedFiles.Should().ContainSingle().Which.Should().Be("src/fix.cs");
+    }
+
+    [Fact]
+    public async Task ExecuteWorkAsync_WhenApiReturnsUnknownOutcome_ReturnsNeedsMoreContext()
+    {
+        // Arrange
+        var workItem = CreateWorkItem();
+        var completion = CreateChatCompletion("""
+            {
+                "outcome": "partial",
+                "summary": "Partially completed",
+                "modified_files": [],
+                "questions": []
+            }
+            """);
+
+        _chatClientMock
+            .Setup(c => c.CompleteChatAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<ChatCompletionOptions>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(completion);
+
+        // Act
+        var result = await _sut.ExecuteWorkAsync(workItem, "/work");
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Outcome.Should().Be(WorkExecutionOutcome.NeedsMoreContext);
+    }
+
+    #endregion
+
+    #region URI Validation
+
+    [Theory]
+    [InlineData("not-a-url")]
+    [InlineData("ftp://invalid-scheme.com")]
+    [InlineData("file:///local/path")]
+    public async Task ExecuteWorkAsync_WhenEndpointIsInvalidUri_ReturnsFailedResult(string invalidEndpoint)
+    {
+        // Arrange
+        _defaultSettings.AzureOpenAIEndpoint = invalidEndpoint;
+        var workItem = CreateWorkItem();
+
+        // Act
+        var result = await _sut.ExecuteWorkAsync(workItem, "/work");
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Outcome.Should().Be(WorkExecutionOutcome.Failed);
+        result.ErrorMessage.Should().Contain("not a valid URL");
     }
 
     #endregion
