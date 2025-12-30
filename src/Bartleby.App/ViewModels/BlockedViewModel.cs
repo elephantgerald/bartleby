@@ -14,19 +14,19 @@ public partial class BlockedViewModel : ObservableObject
     private readonly ILogger<BlockedViewModel>? _logger;
 
     [ObservableProperty]
-    private ObservableCollection<BlockedQuestionDisplay> _questions = [];
+    public partial ObservableCollection<BlockedQuestionDisplay> Questions { get; set; }
 
     [ObservableProperty]
-    private BlockedQuestionDisplay? _selectedQuestion;
+    public partial BlockedQuestionDisplay? SelectedQuestion { get; set; }
 
     [ObservableProperty]
-    private string _answerText = string.Empty;
+    public partial string AnswerText { get; set; }
 
     [ObservableProperty]
-    private bool _isLoading;
+    public partial bool IsLoading { get; set; }
 
     [ObservableProperty]
-    private string? _errorMessage;
+    public partial string? ErrorMessage { get; set; }
 
     public BlockedViewModel(
         IBlockedQuestionRepository questionRepository,
@@ -36,6 +36,8 @@ public partial class BlockedViewModel : ObservableObject
         _questionRepository = questionRepository;
         _workItemRepository = workItemRepository;
         _logger = logger;
+        Questions = [];
+        AnswerText = string.Empty;
     }
 
     [RelayCommand(IncludeCancelCommand = true)]

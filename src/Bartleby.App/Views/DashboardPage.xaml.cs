@@ -77,9 +77,9 @@ public partial class DashboardPage : ContentPage
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                await BlockedFrame.ScaleTo(1.05, 500, Easing.SinInOut);
+                await BlockedFrame.ScaleToAsync(1.05, 500, Easing.SinInOut);
                 if (cancellationToken.IsCancellationRequested) break;
-                await BlockedFrame.ScaleTo(1.0, 500, Easing.SinInOut);
+                await BlockedFrame.ScaleToAsync(1.0, 500, Easing.SinInOut);
             }
         }
         catch (TaskCanceledException)

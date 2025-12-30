@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Octokit;
 
 namespace Bartleby.Infrastructure.WorkSources;
@@ -8,14 +10,21 @@ namespace Bartleby.Infrastructure.WorkSources;
 public class OctokitGitHubApiClient : IGitHubApiClient
 {
     private readonly GitHubClient _client;
+    private readonly ILogger<OctokitGitHubApiClient> _logger;
 
-    public OctokitGitHubApiClient(string? token)
+    public OctokitGitHubApiClient(string? token, ILogger<OctokitGitHubApiClient>? logger = null)
     {
+        _logger = logger ?? NullLogger<OctokitGitHubApiClient>.Instance;
         _client = new GitHubClient(new ProductHeaderValue("Bartleby"));
 
         if (!string.IsNullOrEmpty(token))
         {
             _client.Credentials = new Credentials(token);
+            _logger.LogDebug("GitHub client initialized with authentication token");
+        }
+        else
+        {
+            _logger.LogDebug("GitHub client initialized without authentication (anonymous access)");
         }
     }
 
@@ -120,11 +129,28 @@ public class OctokitGitHubApiClient : IGitHubApiClient
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
+            _logger.LogDebug("Testing connection to repository {Owner}/{Repo}", owner, repo);
             var repository = await _client.Repository.Get(owner, repo);
             return repository != null;
         }
-        catch
+        catch (AuthorizationException ex)
         {
+            _logger.LogWarning(ex, "GitHub API authorization failed for {Owner}/{Repo}. Check your token permissions.", owner, repo);
+            return false;
+        }
+        catch (NotFoundException ex)
+        {
+            _logger.LogWarning(ex, "GitHub repository {Owner}/{Repo} not found. Check the owner and repo names.", owner, repo);
+            return false;
+        }
+        catch (ApiException ex)
+        {
+            _logger.LogWarning(ex, "GitHub API error testing connection to {Owner}/{Repo}: {Message}", owner, repo, ex.Message);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Unexpected error testing GitHub connection to {Owner}/{Repo}", owner, repo);
             return false;
         }
     }

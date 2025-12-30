@@ -20,7 +20,8 @@
                    HorizontalOptions="Center"/>
 
             <!-- Orchestrator Status -->
-            <Frame Padding="15" BackgroundColor="{AppThemeBinding Light=#F0F0F0, Dark=#2A2A2A}">
+            <Border Padding="15" BackgroundColor="{AppThemeBinding Light=#F0F0F0, Dark=#2A2A2A}"
+                    StrokeShape="RoundRectangle 5" Stroke="Transparent">
                 <VerticalStackLayout Spacing="10">
                     <Label Text="Orchestrator" FontSize="18" FontAttributes="Bold"/>
                     <HorizontalStackLayout Spacing="10">
@@ -34,36 +35,39 @@
                                 HorizontalOptions="EndAndExpand"/>
                     </HorizontalStackLayout>
                 </VerticalStackLayout>
-            </Frame>
+            </Border>
 
             <!-- Stats Grid -->
             <Label Text="Work Items" FontSize="18" FontAttributes="Bold"/>
             <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
 
-                <Frame Grid.Row="0" Grid.Column="0" Padding="15" BackgroundColor="#4CAF50">
+                <Border Grid.Row="0" Grid.Column="0" Padding="15" BackgroundColor="#4CAF50"
+                        StrokeShape="RoundRectangle 5" Stroke="Transparent">
                     <VerticalStackLayout>
                         <Label Text="{Binding ReadyItems}" FontSize="36" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
                         <Label Text="Ready" TextColor="White" HorizontalOptions="Center"/>
                     </VerticalStackLayout>
-                </Frame>
+                </Border>
 
-                <Frame Grid.Row="0" Grid.Column="1" Padding="15" BackgroundColor="#2196F3">
+                <Border Grid.Row="0" Grid.Column="1" Padding="15" BackgroundColor="#2196F3"
+                        StrokeShape="RoundRectangle 5" Stroke="Transparent">
                     <VerticalStackLayout>
                         <Label Text="{Binding InProgressItems}" FontSize="36" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
                         <Label Text="In Progress" TextColor="White" HorizontalOptions="Center"/>
                     </VerticalStackLayout>
-                </Frame>
+                </Border>
 
-                <Frame Grid.Row="1" Grid.Column="0" Padding="15" BackgroundColor="#FF9800"
-                       x:Name="BlockedFrame">
-                    <Frame.Triggers>
-                        <DataTrigger TargetType="Frame"
+                <Border Grid.Row="1" Grid.Column="0" Padding="15" BackgroundColor="#FF9800"
+                        StrokeShape="RoundRectangle 5" Stroke="Transparent"
+                        x:Name="BlockedFrame">
+                    <Border.Triggers>
+                        <DataTrigger TargetType="Border"
                                      Binding="{Binding HasBlockedItems}"
                                      Value="True">
-                            <Setter Property="BorderColor" Value="#FF1744"/>
-                            <Setter Property="HasShadow" Value="True"/>
+                            <Setter Property="Stroke" Value="#FF1744"/>
+                            <Setter Property="StrokeThickness" Value="2"/>
                         </DataTrigger>
-                    </Frame.Triggers>
+                    </Border.Triggers>
                     <VerticalStackLayout>
                         <Label Text="{Binding BlockedItems}" FontSize="36" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
                         <Label Text="Blocked" TextColor="White" HorizontalOptions="Center"/>
@@ -74,14 +78,15 @@
                                HorizontalOptions="Center"
                                IsVisible="{Binding HasBlockedItems}"/>
                     </VerticalStackLayout>
-                </Frame>
+                </Border>
 
-                <Frame Grid.Row="1" Grid.Column="1" Padding="15" BackgroundColor="#9C27B0">
+                <Border Grid.Row="1" Grid.Column="1" Padding="15" BackgroundColor="#9C27B0"
+                        StrokeShape="RoundRectangle 5" Stroke="Transparent">
                     <VerticalStackLayout>
                         <Label Text="{Binding CompletedItems}" FontSize="36" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
                         <Label Text="Completed" TextColor="White" HorizontalOptions="Center"/>
                     </VerticalStackLayout>
-                </Frame>
+                </Border>
             </Grid>
 
             <Label Text="{Binding TotalWorkItems, StringFormat='Total: {0} work items'}"

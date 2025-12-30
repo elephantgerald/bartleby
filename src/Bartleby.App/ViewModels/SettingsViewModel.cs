@@ -13,37 +13,37 @@ public partial class SettingsViewModel : ObservableObject
 
     // Azure OpenAI
     [ObservableProperty]
-    private string _azureOpenAIEndpoint = string.Empty;
+    public partial string AzureOpenAIEndpoint { get; set; }
 
     [ObservableProperty]
-    private string _azureOpenAIApiKey = string.Empty;
+    public partial string AzureOpenAIApiKey { get; set; }
 
     [ObservableProperty]
-    private string _azureOpenAIDeploymentName = string.Empty;
+    public partial string AzureOpenAIDeploymentName { get; set; }
 
     // GitHub
     [ObservableProperty]
-    private string _gitHubToken = string.Empty;
+    public partial string GitHubToken { get; set; }
 
     [ObservableProperty]
-    private string _gitHubOwner = string.Empty;
+    public partial string GitHubOwner { get; set; }
 
     [ObservableProperty]
-    private string _gitHubRepo = string.Empty;
+    public partial string GitHubRepo { get; set; }
 
     // Orchestrator
     [ObservableProperty]
-    private bool _orchestratorEnabled;
+    public partial bool OrchestratorEnabled { get; set; }
 
     [ObservableProperty]
-    private int _orchestratorIntervalMinutes = 5;
+    public partial int OrchestratorIntervalMinutes { get; set; }
 
     // Status
     [ObservableProperty]
-    private string _statusMessage = string.Empty;
+    public partial string StatusMessage { get; set; }
 
     [ObservableProperty]
-    private bool _isLoading;
+    public partial bool IsLoading { get; set; }
 
     public SettingsViewModel(
         ISettingsRepository settingsRepository,
@@ -53,6 +53,14 @@ public partial class SettingsViewModel : ObservableObject
         _settingsRepository = settingsRepository;
         _aiProvider = aiProvider;
         _workSource = workSource;
+        AzureOpenAIEndpoint = string.Empty;
+        AzureOpenAIApiKey = string.Empty;
+        AzureOpenAIDeploymentName = string.Empty;
+        GitHubToken = string.Empty;
+        GitHubOwner = string.Empty;
+        GitHubRepo = string.Empty;
+        OrchestratorIntervalMinutes = 5;
+        StatusMessage = string.Empty;
     }
 
     [RelayCommand]
