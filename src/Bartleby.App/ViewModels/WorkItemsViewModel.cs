@@ -12,16 +12,16 @@ public partial class WorkItemsViewModel : ObservableObject
     private readonly IWorkSource _workSource;
 
     [ObservableProperty]
-    private ObservableCollection<WorkItem> _workItems = [];
+    public partial ObservableCollection<WorkItem> WorkItems { get; set; }
 
     [ObservableProperty]
-    private WorkItem? _selectedWorkItem;
+    public partial WorkItem? SelectedWorkItem { get; set; }
 
     [ObservableProperty]
-    private bool _isLoading;
+    public partial bool IsLoading { get; set; }
 
     [ObservableProperty]
-    private string _filterStatus = "All";
+    public partial string FilterStatus { get; set; }
 
     public WorkItemsViewModel(
         IWorkItemRepository workItemRepository,
@@ -29,6 +29,8 @@ public partial class WorkItemsViewModel : ObservableObject
     {
         _workItemRepository = workItemRepository;
         _workSource = workSource;
+        WorkItems = [];
+        FilterStatus = "All";
     }
 
     [RelayCommand]

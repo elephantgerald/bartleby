@@ -11,16 +11,16 @@ public partial class DashboardViewModel : ObservableObject
     private readonly ISettingsRepository _settingsRepository;
 
     [ObservableProperty]
-    private int _totalWorkItems;
+    public partial int TotalWorkItems { get; set; }
 
     [ObservableProperty]
-    private int _readyItems;
+    public partial int ReadyItems { get; set; }
 
     [ObservableProperty]
-    private int _inProgressItems;
+    public partial int InProgressItems { get; set; }
 
     [ObservableProperty]
-    private int _blockedItems;
+    public partial int BlockedItems { get; set; }
 
     /// <summary>
     /// Indicates whether there are blocked items requiring attention.
@@ -31,16 +31,16 @@ public partial class DashboardViewModel : ObservableObject
         => OnPropertyChanged(nameof(HasBlockedItems));
 
     [ObservableProperty]
-    private int _completedItems;
+    public partial int CompletedItems { get; set; }
 
     [ObservableProperty]
-    private bool _orchestratorEnabled;
+    public partial bool OrchestratorEnabled { get; set; }
 
     [ObservableProperty]
-    private string _orchestratorStatus = "Stopped";
+    public partial string OrchestratorStatus { get; set; }
 
     [ObservableProperty]
-    private bool _isLoading;
+    public partial bool IsLoading { get; set; }
 
     public DashboardViewModel(
         IWorkItemRepository workItemRepository,
@@ -48,6 +48,7 @@ public partial class DashboardViewModel : ObservableObject
     {
         _workItemRepository = workItemRepository;
         _settingsRepository = settingsRepository;
+        OrchestratorStatus = "Stopped";
     }
 
     [RelayCommand]
