@@ -4,32 +4,139 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:views="clr-namespace:Bartleby.App.Views"
-    Title="Bartleby">
+    Title="Bartleby"
+    FlyoutBehavior="Locked"
+    FlyoutWidth="48"
+    FlyoutBackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource OffBlack}}"
+    Shell.NavBarIsVisible="False"
+    Shell.TabBarIsVisible="False">
 
-    <TabBar>
-        <ShellContent
-            Title="Dashboard"
-            Icon="{OnPlatform Default=''}"
-            ContentTemplate="{DataTemplate views:DashboardPage}"
-            Route="Dashboard" />
+    <Shell.FlyoutContent>
+        <Grid BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource OffBlack}}"
+              RowDefinitions="*,Auto">
 
-        <ShellContent
-            Title="Work Items"
-            Icon="{OnPlatform Default=''}"
-            ContentTemplate="{DataTemplate views:WorkItemsPage}"
-            Route="WorkItems" />
+            <!-- Navigation icons -->
+            <VerticalStackLayout Grid.Row="0" Spacing="0" VerticalOptions="Start">
 
-        <ShellContent
-            Title="Blocked"
-            Icon="{OnPlatform Default=''}"
-            ContentTemplate="{DataTemplate views:BlockedPage}"
-            Route="Blocked" />
+                <!-- Dashboard -->
+                <Border x:Name="DashboardButton"
+                        HeightRequest="48" WidthRequest="48"
+                        StrokeThickness="0"
+                        BackgroundColor="Transparent">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnDashboardTapped"/>
+                    </Border.GestureRecognizers>
+                    <Grid>
+                        <!-- Selection indicator (left border) -->
+                        <BoxView x:Name="DashboardIndicator"
+                                 WidthRequest="2"
+                                 HorizontalOptions="Start"
+                                 Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource White}}"
+                                 IsVisible="True"/>
+                        <!-- Icon: Home/Dashboard -->
+                        <Path x:Name="DashboardIcon"
+                              Data="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"
+                              Fill="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource White}}"
+                              Aspect="Uniform"
+                              HeightRequest="24" WidthRequest="24"
+                              HorizontalOptions="Center" VerticalOptions="Center"/>
+                    </Grid>
+                </Border>
 
-        <ShellContent
-            Title="Settings"
-            Icon="{OnPlatform Default=''}"
-            ContentTemplate="{DataTemplate views:SettingsPage}"
-            Route="Settings" />
-    </TabBar>
+                <!-- Work Items -->
+                <Border x:Name="WorkItemsButton"
+                        HeightRequest="48" WidthRequest="48"
+                        StrokeThickness="0"
+                        BackgroundColor="Transparent">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnWorkItemsTapped"/>
+                    </Border.GestureRecognizers>
+                    <Grid>
+                        <BoxView x:Name="WorkItemsIndicator"
+                                 WidthRequest="2"
+                                 HorizontalOptions="Start"
+                                 Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource White}}"
+                                 IsVisible="False"/>
+                        <!-- Icon: List/Tasks -->
+                        <Path x:Name="WorkItemsIcon"
+                              Data="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"
+                              Fill="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                              Aspect="Uniform"
+                              HeightRequest="24" WidthRequest="24"
+                              HorizontalOptions="Center" VerticalOptions="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- Blocked -->
+                <Border x:Name="BlockedButton"
+                        HeightRequest="48" WidthRequest="48"
+                        StrokeThickness="0"
+                        BackgroundColor="Transparent">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnBlockedTapped"/>
+                    </Border.GestureRecognizers>
+                    <Grid>
+                        <BoxView x:Name="BlockedIndicator"
+                                 WidthRequest="2"
+                                 HorizontalOptions="Start"
+                                 Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource White}}"
+                                 IsVisible="False"/>
+                        <!-- Icon: Warning/Block -->
+                        <Path x:Name="BlockedIcon"
+                              Data="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"
+                              Fill="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                              Aspect="Uniform"
+                              HeightRequest="24" WidthRequest="24"
+                              HorizontalOptions="Center" VerticalOptions="Center"/>
+                    </Grid>
+                </Border>
+
+            </VerticalStackLayout>
+
+            <!-- Settings at bottom -->
+            <VerticalStackLayout Grid.Row="1" Spacing="0" VerticalOptions="End" Padding="0,0,0,8">
+                <Border x:Name="SettingsButton"
+                        HeightRequest="48" WidthRequest="48"
+                        StrokeThickness="0"
+                        BackgroundColor="Transparent">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnSettingsTapped"/>
+                    </Border.GestureRecognizers>
+                    <Grid>
+                        <BoxView x:Name="SettingsIndicator"
+                                 WidthRequest="2"
+                                 HorizontalOptions="Start"
+                                 Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource White}}"
+                                 IsVisible="False"/>
+                        <!-- Icon: Settings Gear -->
+                        <Path x:Name="SettingsIcon"
+                              Data="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"
+                              Fill="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                              Aspect="Uniform"
+                              HeightRequest="24" WidthRequest="24"
+                              HorizontalOptions="Center" VerticalOptions="Center"/>
+                    </Grid>
+                </Border>
+            </VerticalStackLayout>
+
+        </Grid>
+    </Shell.FlyoutContent>
+
+    <!-- Each page in its own FlyoutItem to eliminate tab bar -->
+    <FlyoutItem Route="Dashboard" FlyoutItemIsVisible="False">
+        <ShellContent ContentTemplate="{DataTemplate views:DashboardPage}" />
+    </FlyoutItem>
+
+    <FlyoutItem Route="WorkItems" FlyoutItemIsVisible="False">
+        <ShellContent ContentTemplate="{DataTemplate views:WorkItemsPage}" />
+    </FlyoutItem>
+
+    <FlyoutItem Route="Blocked" FlyoutItemIsVisible="False">
+        <ShellContent ContentTemplate="{DataTemplate views:BlockedPage}" />
+    </FlyoutItem>
+
+    <FlyoutItem Route="Settings" FlyoutItemIsVisible="False">
+        <ShellContent ContentTemplate="{DataTemplate views:SettingsPage}" />
+    </FlyoutItem>
 
 </Shell>
