@@ -234,7 +234,7 @@ public class SyncServiceTests
         Assert.Equal(3, capturedItem.AttemptCount);
         Assert.Equal("feature/test", capturedItem.BranchName);
         Assert.Equal("Previous error", capturedItem.ErrorMessage);
-        Assert.Equal(1, capturedItem.Dependencies.Count);
+        Assert.Single(capturedItem.Dependencies);
     }
 
     #endregion
@@ -1003,7 +1003,7 @@ public class SyncServiceTests
         capturedItem!.Labels.Add("modified");
 
         Assert.DoesNotContain("modified", remoteItem.Labels);
-        Assert.Equal(1, remoteItem.Labels.Count);
+        Assert.Single(remoteItem.Labels);
     }
 
     [Fact]
@@ -1036,7 +1036,7 @@ public class SyncServiceTests
         capturedItem!.Dependencies.Add(newDepId);
 
         Assert.DoesNotContain(newDepId, localItem.Dependencies);
-        Assert.Equal(1, localItem.Dependencies.Count);
+        Assert.Single(localItem.Dependencies);
     }
 
     #endregion

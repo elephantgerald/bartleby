@@ -104,7 +104,7 @@ public class GitHubWorkSourceTests
 
         // Assert
         var workItems = result.ToList();
-        Assert.Equal(1, workItems.Count);
+        Assert.Single(workItems);
 
         var workItem = workItems[0];
         Assert.Equal("Test Issue", workItem.Title);
@@ -157,7 +157,7 @@ public class GitHubWorkSourceTests
 
         // Assert
         var resultList = result.ToList();
-        Assert.Equal(1, resultList.Count);
+        Assert.Single(resultList);
         Assert.Equal("1", resultList.First().ExternalId);
     }
 
@@ -371,7 +371,7 @@ public class GitHubWorkSourceTests
 
         // Assert
         Assert.NotNull(capturedUpdate);
-        Assert.Contains("bartleby:in-progress", capturedUpdate!.Labels);
+        Assert.Contains("bartleby:in-progress", capturedUpdate!.Labels!);
     }
 
     [Fact]
@@ -401,9 +401,9 @@ public class GitHubWorkSourceTests
 
         // Assert
         Assert.NotNull(capturedUpdate);
-        Assert.Contains("bug", capturedUpdate!.Labels);
-        Assert.Contains("high-priority", capturedUpdate.Labels);
-        Assert.Contains("bartleby:ready", capturedUpdate.Labels);
+        Assert.Contains("bug", capturedUpdate!.Labels!);
+        Assert.Contains("high-priority", capturedUpdate.Labels!);
+        Assert.Contains("bartleby:ready", capturedUpdate.Labels!);
     }
 
     [Fact]
@@ -433,10 +433,10 @@ public class GitHubWorkSourceTests
 
         // Assert - old status label removed, new one added, non-status labels preserved
         Assert.NotNull(capturedUpdate);
-        Assert.Contains("bug", capturedUpdate!.Labels);
-        Assert.Contains("high-priority", capturedUpdate.Labels);
-        Assert.Contains("bartleby:in-progress", capturedUpdate.Labels);
-        Assert.DoesNotContain("bartleby:ready", capturedUpdate.Labels);
+        Assert.Contains("bug", capturedUpdate!.Labels!);
+        Assert.Contains("high-priority", capturedUpdate.Labels!);
+        Assert.Contains("bartleby:in-progress", capturedUpdate.Labels!);
+        Assert.DoesNotContain("bartleby:ready", capturedUpdate.Labels!);
     }
 
     #endregion

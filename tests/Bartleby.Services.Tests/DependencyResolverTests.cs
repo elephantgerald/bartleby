@@ -85,7 +85,7 @@ public class DependencyResolverTests
         var result = await _resolver.GetReadyWorkItemsAsync();
 
         // Assert
-        Assert.Equal(1, result.Count);
+        Assert.Single(result);
         Assert.Contains(pendingItem, result);
         Assert.DoesNotContain(completedItem, result);
     }
@@ -104,7 +104,7 @@ public class DependencyResolverTests
         var result = await _resolver.GetReadyWorkItemsAsync();
 
         // Assert
-        Assert.Equal(1, result.Count);
+        Assert.Single(result);
         Assert.Contains(pendingItem, result);
     }
 
@@ -122,7 +122,7 @@ public class DependencyResolverTests
         var result = await _resolver.GetReadyWorkItemsAsync();
 
         // Assert
-        Assert.Equal(1, result.Count);
+        Assert.Single(result);
         Assert.Contains(pendingItem, result);
     }
 
@@ -140,7 +140,7 @@ public class DependencyResolverTests
         var result = await _resolver.GetReadyWorkItemsAsync();
 
         // Assert
-        Assert.Equal(1, result.Count);
+        Assert.Single(result);
         Assert.Contains(pendingItem, result);
     }
 
@@ -164,7 +164,7 @@ public class DependencyResolverTests
         var result = await _resolver.GetReadyWorkItemsAsync();
 
         // Assert
-        Assert.Equal(1, result.Count);
+        Assert.Single(result);
         Assert.Contains(itemB, result);
     }
 
@@ -187,7 +187,7 @@ public class DependencyResolverTests
         var result = await _resolver.GetReadyWorkItemsAsync();
 
         // Assert
-        Assert.Equal(1, result.Count);
+        Assert.Single(result);
         Assert.Contains(itemC, result);
     }
 
@@ -212,7 +212,7 @@ public class DependencyResolverTests
         var result = await _resolver.GetReadyWorkItemsAsync();
 
         // Assert
-        Assert.Equal(1, result.Count);
+        Assert.Single(result);
         Assert.Contains(itemA, result);
     }
 
@@ -236,7 +236,7 @@ public class DependencyResolverTests
         var result = await _resolver.GetReadyWorkItemsAsync();
 
         // Assert
-        Assert.Equal(1, result.Count);
+        Assert.Single(result);
         Assert.Contains(itemA, result);
         Assert.DoesNotContain(itemB, result);
     }
@@ -260,7 +260,7 @@ public class DependencyResolverTests
         var result = await _resolver.GetReadyWorkItemsAsync();
 
         // Assert
-        Assert.Equal(1, result.Count);
+        Assert.Single(result);
         Assert.Contains(itemB, result);
         Assert.DoesNotContain(itemC, result);
     }
@@ -526,7 +526,7 @@ public class DependencyResolverTests
         var result = await _resolver.GetDependencyChainAsync(itemB.Id);
 
         // Assert
-        Assert.Equal(1, result.Count);
+        Assert.Single(result);
         Assert.Contains(itemA.Id, result);
     }
 
