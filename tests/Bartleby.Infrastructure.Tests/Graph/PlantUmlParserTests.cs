@@ -1,5 +1,4 @@
 using Bartleby.Infrastructure.Graph;
-using FluentAssertions;
 
 namespace Bartleby.Infrastructure.Tests.Graph;
 
@@ -19,9 +18,9 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Nodes.Should().BeEmpty();
-        result.Edges.Should().BeEmpty();
+        Assert.True(result.Success);
+        Assert.Empty(result.Nodes);
+        Assert.Empty(result.Edges);
     }
 
     [Fact]
@@ -34,9 +33,9 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Nodes.Should().BeEmpty();
-        result.Edges.Should().BeEmpty();
+        Assert.True(result.Success);
+        Assert.Empty(result.Nodes);
+        Assert.Empty(result.Edges);
     }
 
     [Fact]
@@ -53,11 +52,11 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Nodes.Should().HaveCount(1);
-        result.Nodes["A"].Title.Should().Be("Task A");
-        result.Nodes["A"].Alias.Should().Be("A");
-        result.Nodes["A"].Type.Should().Be(PlantUmlNodeType.Component);
+        Assert.True(result.Success);
+        Assert.Equal(1, result.Nodes.Count);
+        Assert.Equal("Task A", result.Nodes["A"].Title);
+        Assert.Equal("A", result.Nodes["A"].Alias);
+        Assert.Equal(PlantUmlNodeType.Component, result.Nodes["A"].Type);
     }
 
     [Fact]
@@ -76,11 +75,11 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Nodes.Should().HaveCount(3);
-        result.Nodes.Should().ContainKey("A");
-        result.Nodes.Should().ContainKey("B");
-        result.Nodes.Should().ContainKey("C");
+        Assert.True(result.Success);
+        Assert.Equal(3, result.Nodes.Count);
+        Assert.True(result.Nodes.ContainsKey("A"));
+        Assert.True(result.Nodes.ContainsKey("B"));
+        Assert.True(result.Nodes.ContainsKey("C"));
     }
 
     [Fact]
@@ -97,10 +96,10 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Nodes.Should().HaveCount(1);
-        result.Nodes["TaskA"].Title.Should().Be("TaskA");
-        result.Nodes["TaskA"].Alias.Should().Be("TaskA");
+        Assert.True(result.Success);
+        Assert.Equal(1, result.Nodes.Count);
+        Assert.Equal("TaskA", result.Nodes["TaskA"].Title);
+        Assert.Equal("TaskA", result.Nodes["TaskA"].Alias);
     }
 
     [Theory]
@@ -122,9 +121,9 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Nodes.Should().HaveCount(1);
-        result.Nodes["T"].Title.Should().Be("Test");
+        Assert.True(result.Success);
+        Assert.Equal(1, result.Nodes.Count);
+        Assert.Equal("Test", result.Nodes["T"].Title);
     }
 
     [Fact]
@@ -143,11 +142,11 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Edges.Should().HaveCount(1);
-        result.Edges[0].From.Should().Be("A");
-        result.Edges[0].To.Should().Be("B");
-        result.Edges[0].ArrowType.Should().Be(PlantUmlArrowType.Solid);
+        Assert.True(result.Success);
+        Assert.Equal(1, result.Edges.Count);
+        Assert.Equal("A", result.Edges[0].From);
+        Assert.Equal("B", result.Edges[0].To);
+        Assert.Equal(PlantUmlArrowType.Solid, result.Edges[0].ArrowType);
     }
 
     [Fact]
@@ -166,9 +165,9 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Edges.Should().HaveCount(1);
-        result.Edges[0].ArrowType.Should().Be(PlantUmlArrowType.Dashed);
+        Assert.True(result.Success);
+        Assert.Equal(1, result.Edges.Count);
+        Assert.Equal(PlantUmlArrowType.Dashed, result.Edges[0].ArrowType);
     }
 
     [Fact]
@@ -187,9 +186,9 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Edges.Should().HaveCount(1);
-        result.Edges[0].ArrowType.Should().Be(PlantUmlArrowType.Bold);
+        Assert.True(result.Success);
+        Assert.Equal(1, result.Edges.Count);
+        Assert.Equal(PlantUmlArrowType.Bold, result.Edges[0].ArrowType);
     }
 
     [Fact]
@@ -208,8 +207,8 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Edges[0].Label.Should().Be("depends on");
+        Assert.True(result.Success);
+        Assert.Equal("depends on", result.Edges[0].Label);
     }
 
     [Fact]
@@ -228,10 +227,10 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Edges.Should().HaveCount(1);
-        result.Edges[0].From.Should().Be("B");
-        result.Edges[0].To.Should().Be("A");
+        Assert.True(result.Success);
+        Assert.Equal(1, result.Edges.Count);
+        Assert.Equal("B", result.Edges[0].From);
+        Assert.Equal("A", result.Edges[0].To);
     }
 
     [Fact]
@@ -253,9 +252,9 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Nodes.Should().HaveCount(2);
-        result.Edges.Should().HaveCount(1);
+        Assert.True(result.Success);
+        Assert.Equal(2, result.Nodes.Count);
+        Assert.Equal(1, result.Edges.Count);
     }
 
     [Fact]
@@ -277,14 +276,14 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Nodes.Should().HaveCount(3);
-        result.Edges.Should().HaveCount(2);
+        Assert.True(result.Success);
+        Assert.Equal(3, result.Nodes.Count);
+        Assert.Equal(2, result.Edges.Count);
 
-        result.Edges[0].From.Should().Be("A");
-        result.Edges[0].To.Should().Be("B");
-        result.Edges[1].From.Should().Be("B");
-        result.Edges[1].To.Should().Be("C");
+        Assert.Equal("A", result.Edges[0].From);
+        Assert.Equal("B", result.Edges[0].To);
+        Assert.Equal("B", result.Edges[1].From);
+        Assert.Equal("C", result.Edges[1].To);
     }
 
     [Fact]
@@ -302,8 +301,8 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Nodes.Should().HaveCount(2);
+        Assert.True(result.Success);
+        Assert.Equal(2, result.Nodes.Count);
     }
 
     #endregion
@@ -325,8 +324,8 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.Message.Contains("Duplicate node alias"));
+        Assert.False(result.Success);
+        Assert.Contains(result.Errors, e => e.Message.Contains("Duplicate node alias"));
     }
 
     [Fact]
@@ -344,8 +343,8 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.Message.Contains("unknown node 'X'"));
+        Assert.False(result.Success);
+        Assert.Contains(result.Errors, e => e.Message.Contains("unknown node 'X'"));
     }
 
     [Fact]
@@ -363,8 +362,8 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.Message.Contains("unknown node 'Y'"));
+        Assert.False(result.Success);
+        Assert.Contains(result.Errors, e => e.Message.Contains("unknown node 'Y'"));
     }
 
     [Fact]
@@ -380,8 +379,8 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.Message.Contains("Missing @enduml"));
+        Assert.False(result.Success);
+        Assert.Contains(result.Errors, e => e.Message.Contains("Missing @enduml"));
     }
 
     [Fact]
@@ -399,8 +398,8 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.Message.Contains("Unexpected @startuml"));
+        Assert.False(result.Success);
+        Assert.Contains(result.Errors, e => e.Message.Contains("Unexpected @startuml"));
     }
 
     [Fact]
@@ -415,8 +414,8 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.Message.Contains("Unexpected @enduml"));
+        Assert.False(result.Success);
+        Assert.Contains(result.Errors, e => e.Message.Contains("Unexpected @enduml"));
     }
 
     #endregion
@@ -436,9 +435,9 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Nodes.Should().BeEmpty();
-        result.Edges.Should().BeEmpty();
+        Assert.True(result.Success);
+        Assert.Empty(result.Nodes);
+        Assert.Empty(result.Edges);
     }
 
     [Fact]
@@ -457,9 +456,9 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Nodes.Should().BeEmpty();
-        result.Edges.Should().BeEmpty();
+        Assert.True(result.Success);
+        Assert.Empty(result.Nodes);
+        Assert.Empty(result.Edges);
     }
 
     [Fact]
@@ -478,11 +477,11 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Nodes.Should().HaveCount(1);
-        result.Nodes.Should().ContainKey("A");
-        result.Nodes.Should().NotContainKey("X");
-        result.Nodes.Should().NotContainKey("Y");
+        Assert.True(result.Success);
+        Assert.Equal(1, result.Nodes.Count);
+        Assert.True(result.Nodes.ContainsKey("A"));
+        Assert.False(result.Nodes.ContainsKey("X"));
+        Assert.False(result.Nodes.ContainsKey("Y"));
     }
 
     [Fact]
@@ -499,9 +498,9 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Nodes.Should().HaveCount(2);
-        result.Edges.Should().HaveCount(1);
+        Assert.True(result.Success);
+        Assert.Equal(2, result.Nodes.Count);
+        Assert.Equal(1, result.Edges.Count);
     }
 
     [Fact]
@@ -514,9 +513,9 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Nodes.Should().HaveCount(2);
-        result.Edges.Should().HaveCount(1);
+        Assert.True(result.Success);
+        Assert.Equal(2, result.Nodes.Count);
+        Assert.Equal(1, result.Edges.Count);
     }
 
     [Fact]
@@ -529,9 +528,9 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Nodes.Should().HaveCount(2);
-        result.Edges.Should().HaveCount(1);
+        Assert.True(result.Success);
+        Assert.Equal(2, result.Nodes.Count);
+        Assert.Equal(1, result.Edges.Count);
     }
 
     [Fact]
@@ -550,8 +549,8 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Nodes.Should().HaveCount(2);
+        Assert.True(result.Success);
+        Assert.Equal(2, result.Nodes.Count);
     }
 
     [Fact]
@@ -569,8 +568,8 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Nodes["A"].LineNumber.Should().Be(2);
-        result.Nodes["B"].LineNumber.Should().Be(3);
+        Assert.Equal(2, result.Nodes["A"].LineNumber);
+        Assert.Equal(3, result.Nodes["B"].LineNumber);
     }
 
     [Fact]
@@ -589,7 +588,7 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Edges[0].LineNumber.Should().Be(4);
+        Assert.Equal(4, result.Edges[0].LineNumber);
     }
 
     [Fact]
@@ -608,8 +607,8 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Edges.Should().HaveCount(1);
+        Assert.True(result.Success);
+        Assert.Equal(1, result.Edges.Count);
     }
 
     [Fact]
@@ -629,10 +628,10 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Edges.Should().HaveCount(2);
-        result.Edges[0].Label.Should().Be("first");
-        result.Edges[1].Label.Should().Be("second");
+        Assert.True(result.Success);
+        Assert.Equal(2, result.Edges.Count);
+        Assert.Equal("first", result.Edges[0].Label);
+        Assert.Equal("second", result.Edges[1].Label);
     }
 
     #endregion
@@ -658,9 +657,9 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Nodes.Should().ContainKey(alias);
-        result.Nodes[alias].Alias.Should().Be(alias);
+        Assert.True(result.Success);
+        Assert.True(result.Nodes.ContainsKey(alias));
+        Assert.Equal(alias, result.Nodes[alias].Alias);
     }
 
     [Fact]
@@ -679,11 +678,11 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Edges.Should().HaveCount(1);
-        result.Edges[0].From.Should().Be("A");
-        result.Edges[0].To.Should().Be("B");
-        result.Edges[0].ArrowType.Should().Be(PlantUmlArrowType.Solid);
+        Assert.True(result.Success);
+        Assert.Equal(1, result.Edges.Count);
+        Assert.Equal("A", result.Edges[0].From);
+        Assert.Equal("B", result.Edges[0].To);
+        Assert.Equal(PlantUmlArrowType.Solid, result.Edges[0].ArrowType);
     }
 
     [Theory]
@@ -709,10 +708,10 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Edges.Should().HaveCount(1);
-        result.Edges[0].From.Should().Be(expectedFrom);
-        result.Edges[0].To.Should().Be(expectedTo);
+        Assert.True(result.Success);
+        Assert.Equal(1, result.Edges.Count);
+        Assert.Equal(expectedFrom, result.Edges[0].From);
+        Assert.Equal(expectedTo, result.Edges[0].To);
     }
 
     [Theory]
@@ -737,10 +736,10 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Edges.Should().HaveCount(1);
-        result.Edges[0].From.Should().Be("A");
-        result.Edges[0].To.Should().Be("B");
+        Assert.True(result.Success);
+        Assert.Equal(1, result.Edges.Count);
+        Assert.Equal("A", result.Edges[0].From);
+        Assert.Equal("B", result.Edges[0].To);
     }
 
     [Fact]
@@ -757,9 +756,9 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Nodes.Should().HaveCount(1);
-        result.Nodes["A"].Title.Should().Be("Say \"Hello\" World");
+        Assert.True(result.Success);
+        Assert.Equal(1, result.Nodes.Count);
+        Assert.Equal("Say \"Hello\" World", result.Nodes["A"].Title);
     }
 
     [Fact]
@@ -776,8 +775,8 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Nodes["A"].Title.Should().Be("Path: C:\\Users\\test");
+        Assert.True(result.Success);
+        Assert.Equal("Path: C:\\Users\\test", result.Nodes["A"].Title);
     }
 
     [Fact]
@@ -796,10 +795,10 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Edges.Should().HaveCount(1);
-        result.Edges[0].From.Should().Be("B");
-        result.Edges[0].To.Should().Be("A");
+        Assert.True(result.Success);
+        Assert.Equal(1, result.Edges.Count);
+        Assert.Equal("B", result.Edges[0].From);
+        Assert.Equal("A", result.Edges[0].To);
     }
 
     [Fact]
@@ -818,11 +817,11 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Nodes.Should().HaveCount(2);
-        result.Edges.Should().HaveCount(1);
-        result.Edges[0].From.Should().Be("task-1");
-        result.Edges[0].To.Should().Be("task-2");
+        Assert.True(result.Success);
+        Assert.Equal(2, result.Nodes.Count);
+        Assert.Equal(1, result.Edges.Count);
+        Assert.Equal("task-1", result.Edges[0].From);
+        Assert.Equal("task-2", result.Edges[0].To);
     }
 
     [Fact]
@@ -845,10 +844,10 @@ public class PlantUmlParserTests
         var result = _parser.Parse(content);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Nodes.Should().HaveCount(3);
-        result.Nodes["auth-service"].Title.Should().Be("Authentication \"OAuth\"");
-        result.Edges.Should().HaveCount(3);
+        Assert.True(result.Success);
+        Assert.Equal(3, result.Nodes.Count);
+        Assert.Equal("Authentication \"OAuth\"", result.Nodes["auth-service"].Title);
+        Assert.Equal(3, result.Edges.Count);
     }
 
     #endregion

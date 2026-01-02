@@ -1,7 +1,6 @@
 using Bartleby.Core.Interfaces;
 using Bartleby.Core.Models;
 using Bartleby.Services;
-using FluentAssertions;
 using Moq;
 
 namespace Bartleby.Services.Tests;
@@ -26,15 +25,15 @@ public class SyncServiceTests
     [Fact]
     public void Constructor_WithNullWorkSource_ThrowsArgumentNullException()
     {
-        var act = () => new SyncService(null!, _workItemRepositoryMock.Object);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("workSource");
+        var ex = Assert.Throws<ArgumentNullException>(() => new SyncService(null!, _workItemRepositoryMock.Object));
+        Assert.Equal("workSource", ex.ParamName);
     }
 
     [Fact]
     public void Constructor_WithNullRepository_ThrowsArgumentNullException()
     {
-        var act = () => new SyncService(_workSourceMock.Object, null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("workItemRepository");
+        var ex = Assert.Throws<ArgumentNullException>(() => new SyncService(_workSourceMock.Object, null!));
+        Assert.Equal("workItemRepository", ex.ParamName);
     }
 
     #endregion
@@ -44,13 +43,13 @@ public class SyncServiceTests
     [Fact]
     public void IsSyncing_Initially_IsFalse()
     {
-        _syncService.IsSyncing.Should().BeFalse();
+        Assert.False(_syncService.IsSyncing);
     }
 
     [Fact]
     public void LastSyncTime_Initially_IsNull()
     {
-        _syncService.LastSyncTime.Should().BeNull();
+        Assert.Null(_syncService.LastSyncTime);
     }
 
     #endregion
@@ -76,10 +75,10 @@ public class SyncServiceTests
         var result = await _syncService.SyncAsync();
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.ItemsAdded.Should().Be(1);
-        result.ItemsUpdated.Should().Be(0);
-        result.ItemsRemoved.Should().Be(0);
+        Assert.True(result.Success);
+        Assert.Equal(1, result.ItemsAdded);
+        Assert.Equal(0, result.ItemsUpdated);
+        Assert.Equal(0, result.ItemsRemoved);
 
         _workItemRepositoryMock.Verify(
             r => r.CreateAsync(It.Is<WorkItem>(w => w.ExternalId == "1"), It.IsAny<CancellationToken>()),
@@ -110,8 +109,8 @@ public class SyncServiceTests
         var result = await _syncService.SyncAsync();
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.ItemsAdded.Should().Be(3);
+        Assert.True(result.Success);
+        Assert.Equal(3, result.ItemsAdded);
 
         _workItemRepositoryMock.Verify(
             r => r.CreateAsync(It.IsAny<WorkItem>(), It.IsAny<CancellationToken>()),
@@ -134,8 +133,8 @@ public class SyncServiceTests
         var result = await _syncService.SyncAsync();
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.ItemsAdded.Should().Be(0);
+        Assert.True(result.Success);
+        Assert.Equal(0, result.ItemsAdded);
 
         _workItemRepositoryMock.Verify(
             r => r.CreateAsync(It.IsAny<WorkItem>(), It.IsAny<CancellationToken>()),
@@ -166,9 +165,9 @@ public class SyncServiceTests
         var result = await _syncService.SyncAsync();
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.ItemsUpdated.Should().Be(1);
-        result.ItemsAdded.Should().Be(0);
+        Assert.True(result.Success);
+        Assert.Equal(1, result.ItemsUpdated);
+        Assert.Equal(0, result.ItemsAdded);
 
         _workItemRepositoryMock.Verify(
             r => r.UpdateAsync(It.Is<WorkItem>(w => w.Title == "New Title"), It.IsAny<CancellationToken>()),
@@ -230,12 +229,12 @@ public class SyncServiceTests
         await _syncService.SyncAsync();
 
         // Assert
-        capturedItem.Should().NotBeNull();
-        capturedItem!.LastWorkedAt.Should().Be(localItem.LastWorkedAt);
-        capturedItem.AttemptCount.Should().Be(3);
-        capturedItem.BranchName.Should().Be("feature/test");
-        capturedItem.ErrorMessage.Should().Be("Previous error");
-        capturedItem.Dependencies.Should().HaveCount(1);
+        Assert.NotNull(capturedItem);
+        Assert.Equal(localItem.LastWorkedAt, capturedItem!.LastWorkedAt);
+        Assert.Equal(3, capturedItem.AttemptCount);
+        Assert.Equal("feature/test", capturedItem.BranchName);
+        Assert.Equal("Previous error", capturedItem.ErrorMessage);
+        Assert.Equal(1, capturedItem.Dependencies.Count);
     }
 
     #endregion
@@ -258,8 +257,8 @@ public class SyncServiceTests
         var result = await _syncService.SyncAsync();
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.ItemsRemoved.Should().Be(1);
+        Assert.True(result.Success);
+        Assert.Equal(1, result.ItemsRemoved);
 
         _workItemRepositoryMock.Verify(
             r => r.DeleteAsync(localItem.Id, It.IsAny<CancellationToken>()),
@@ -282,7 +281,7 @@ public class SyncServiceTests
         var result = await _syncService.SyncAsync();
 
         // Assert
-        result.ItemsRemoved.Should().Be(0);
+        Assert.Equal(0, result.ItemsRemoved);
 
         _workItemRepositoryMock.Verify(
             r => r.DeleteAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
@@ -313,8 +312,8 @@ public class SyncServiceTests
         var result = await _syncService.SyncAsync();
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.StatusesPushed.Should().Be(1);
+        Assert.True(result.Success);
+        Assert.Equal(1, result.StatusesPushed);
 
         _workSourceMock.Verify(
             w => w.UpdateStatusAsync(It.Is<WorkItem>(wi => wi.Status == WorkItemStatus.InProgress), It.IsAny<CancellationToken>()),
@@ -343,8 +342,8 @@ public class SyncServiceTests
         await _syncService.SyncAsync();
 
         // Assert
-        capturedItem.Should().NotBeNull();
-        capturedItem!.Status.Should().Be(WorkItemStatus.InProgress);
+        Assert.NotNull(capturedItem);
+        Assert.Equal(WorkItemStatus.InProgress, capturedItem!.Status);
     }
 
     [Fact]
@@ -367,7 +366,7 @@ public class SyncServiceTests
         var result = await _syncService.SyncAsync();
 
         // Assert
-        result.StatusesPushed.Should().Be(0);
+        Assert.Equal(0, result.StatusesPushed);
 
         _workSourceMock.Verify(
             w => w.UpdateStatusAsync(It.IsAny<WorkItem>(), It.IsAny<CancellationToken>()),
@@ -395,7 +394,7 @@ public class SyncServiceTests
         var result = await _syncService.SyncAsync();
 
         // Assert
-        result.StatusesPushed.Should().Be(0);
+        Assert.Equal(0, result.StatusesPushed);
 
         _workSourceMock.Verify(
             w => w.UpdateStatusAsync(It.IsAny<WorkItem>(), It.IsAny<CancellationToken>()),
@@ -427,7 +426,7 @@ public class SyncServiceTests
         var result = await _syncService.SyncAsync();
 
         // Assert
-        result.StatusesPushed.Should().Be(1);
+        Assert.Equal(1, result.StatusesPushed);
 
         _workSourceMock.Verify(
             w => w.UpdateStatusAsync(It.Is<WorkItem>(wi => wi.Status == localStatus), It.IsAny<CancellationToken>()),
@@ -455,8 +454,8 @@ public class SyncServiceTests
         await _syncService.SyncAsync();
 
         // Assert
-        eventArgs.Should().NotBeNull();
-        eventArgs!.SourceName.Should().Be("TestSource");
+        Assert.NotNull(eventArgs);
+        Assert.Equal("TestSource", eventArgs!.SourceName);
     }
 
     [Fact]
@@ -476,8 +475,8 @@ public class SyncServiceTests
         await _syncService.SyncAsync();
 
         // Assert
-        eventArgs.Should().NotBeNull();
-        eventArgs!.Result.Success.Should().BeTrue();
+        Assert.NotNull(eventArgs);
+        Assert.True(eventArgs!.Result.Success);
     }
 
     [Fact]
@@ -502,7 +501,7 @@ public class SyncServiceTests
         await _syncService.SyncAsync();
 
         // Assert
-        events.Should().ContainSingle(e => e.Action == SyncAction.Added);
+        Assert.Single(events, e => e.Action == SyncAction.Added);
     }
 
     [Fact]
@@ -529,7 +528,7 @@ public class SyncServiceTests
         await _syncService.SyncAsync();
 
         // Assert
-        events.Should().ContainSingle(e => e.Action == SyncAction.Updated);
+        Assert.Single(events, e => e.Action == SyncAction.Updated);
     }
 
     [Fact]
@@ -551,7 +550,7 @@ public class SyncServiceTests
         await _syncService.SyncAsync();
 
         // Assert
-        events.Should().ContainSingle(e => e.Action == SyncAction.Removed);
+        Assert.Single(events, e => e.Action == SyncAction.Removed);
     }
 
     [Fact]
@@ -577,7 +576,7 @@ public class SyncServiceTests
         await _syncService.SyncAsync();
 
         // Assert
-        events.Should().Contain(e => e.Action == SyncAction.StatusPushed);
+        Assert.Contains(events, e => e.Action == SyncAction.StatusPushed);
     }
 
     #endregion
@@ -612,8 +611,8 @@ public class SyncServiceTests
         await firstSync;
 
         // Assert
-        secondResult.Success.Should().BeFalse();
-        secondResult.ErrorMessage.Should().Contain("already in progress");
+        Assert.False(secondResult.Success);
+        Assert.Contains("already in progress", secondResult.ErrorMessage);
     }
 
     [Fact]
@@ -636,8 +635,8 @@ public class SyncServiceTests
         await _syncService.SyncAsync();
 
         // Assert
-        wasSyncing.Should().BeTrue();
-        _syncService.IsSyncing.Should().BeFalse();
+        Assert.True(wasSyncing);
+        Assert.False(_syncService.IsSyncing);
     }
 
     #endregion
@@ -661,9 +660,9 @@ public class SyncServiceTests
         var after = DateTime.UtcNow;
 
         // Assert
-        _syncService.LastSyncTime.Should().NotBeNull();
-        _syncService.LastSyncTime.Should().BeOnOrAfter(before);
-        _syncService.LastSyncTime.Should().BeOnOrBefore(after);
+        Assert.NotNull(_syncService.LastSyncTime);
+        Assert.True(_syncService.LastSyncTime >= before);
+        Assert.True(_syncService.LastSyncTime <= after);
     }
 
     [Fact]
@@ -677,7 +676,7 @@ public class SyncServiceTests
         await _syncService.SyncAsync();
 
         // Assert
-        _syncService.LastSyncTime.Should().BeNull();
+        Assert.Null(_syncService.LastSyncTime);
     }
 
     #endregion
@@ -695,8 +694,8 @@ public class SyncServiceTests
         var result = await _syncService.SyncAsync();
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("Connection failed");
+        Assert.False(result.Success);
+        Assert.Contains("Connection failed", result.ErrorMessage);
     }
 
     [Fact]
@@ -716,8 +715,8 @@ public class SyncServiceTests
         var result = await _syncService.SyncAsync(cts.Token);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("cancelled");
+        Assert.False(result.Success);
+        Assert.Contains("cancelled", result.ErrorMessage);
     }
 
     [Fact]
@@ -734,8 +733,8 @@ public class SyncServiceTests
         await _syncService.SyncAsync();
 
         // Assert
-        eventArgs.Should().NotBeNull();
-        eventArgs!.Result.Success.Should().BeFalse();
+        Assert.NotNull(eventArgs);
+        Assert.False(eventArgs!.Result.Success);
     }
 
     #endregion
@@ -760,7 +759,7 @@ public class SyncServiceTests
         var result = await _syncService.SyncAsync();
 
         // Assert
-        result.Duration.Should().BeGreaterThan(TimeSpan.FromMilliseconds(40));
+        Assert.True(result.Duration > TimeSpan.FromMilliseconds(40));
     }
 
     #endregion
@@ -789,8 +788,8 @@ public class SyncServiceTests
         var result = await _syncService.SyncAsync();
 
         // Assert: No update should be called since content is identical
-        result.Success.Should().BeTrue();
-        result.ItemsUpdated.Should().Be(0);
+        Assert.True(result.Success);
+        Assert.Equal(0, result.ItemsUpdated);
 
         _workItemRepositoryMock.Verify(
             r => r.UpdateAsync(It.IsAny<WorkItem>(), It.IsAny<CancellationToken>()),
@@ -817,7 +816,7 @@ public class SyncServiceTests
         var result = await _syncService.SyncAsync();
 
         // Assert: No update since labels are the same (order-insensitive)
-        result.ItemsUpdated.Should().Be(0);
+        Assert.Equal(0, result.ItemsUpdated);
 
         _workItemRepositoryMock.Verify(
             r => r.UpdateAsync(It.IsAny<WorkItem>(), It.IsAny<CancellationToken>()),
@@ -847,7 +846,7 @@ public class SyncServiceTests
         var result = await _syncService.SyncAsync();
 
         // Assert
-        result.ItemsUpdated.Should().Be(1);
+        Assert.Equal(1, result.ItemsUpdated);
 
         _workItemRepositoryMock.Verify(
             r => r.UpdateAsync(It.IsAny<WorkItem>(), It.IsAny<CancellationToken>()),
@@ -884,7 +883,7 @@ public class SyncServiceTests
         var result = await _syncService.SyncAsync();
 
         // Assert: Should update the newer item (most recently updated)
-        result.Success.Should().BeTrue();
+        Assert.True(result.Success);
 
         _workItemRepositoryMock.Verify(
             r => r.UpdateAsync(It.Is<WorkItem>(w => w.Id == newerItem.Id), It.IsAny<CancellationToken>()),
@@ -926,10 +925,10 @@ public class SyncServiceTests
         var result = await _syncService.SyncAsync();
 
         // Assert: Sync completes with partial success
-        result.Success.Should().BeTrue();
-        result.ItemsAdded.Should().Be(2); // Items 1 and 3 succeeded
-        result.ErrorMessage.Should().Contain("1 error");
-        result.ErrorMessage.Should().Contain("Database error");
+        Assert.True(result.Success);
+        Assert.Equal(2, result.ItemsAdded); // Items 1 and 3 succeeded
+        Assert.Contains("1 error", result.ErrorMessage);
+        Assert.Contains("Database error", result.ErrorMessage);
 
         // Verify all three items were attempted
         _workItemRepositoryMock.Verify(
@@ -965,10 +964,10 @@ public class SyncServiceTests
         var result = await _syncService.SyncAsync();
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.StatusesPushed.Should().Be(1); // Only second one succeeded
-        result.ErrorMessage.Should().Contain("1 error");
-        result.ErrorMessage.Should().Contain("API rate limited");
+        Assert.True(result.Success);
+        Assert.Equal(1, result.StatusesPushed); // Only second one succeeded
+        Assert.Contains("1 error", result.ErrorMessage);
+        Assert.Contains("API rate limited", result.ErrorMessage);
     }
 
     #endregion
@@ -1000,11 +999,11 @@ public class SyncServiceTests
         await _syncService.SyncAsync();
 
         // Assert: Modifying the merged item's labels should not affect the remote item
-        capturedItem.Should().NotBeNull();
+        Assert.NotNull(capturedItem);
         capturedItem!.Labels.Add("modified");
 
-        remoteItem.Labels.Should().NotContain("modified");
-        remoteItem.Labels.Should().HaveCount(1);
+        Assert.DoesNotContain("modified", remoteItem.Labels);
+        Assert.Equal(1, remoteItem.Labels.Count);
     }
 
     [Fact]
@@ -1032,12 +1031,12 @@ public class SyncServiceTests
         await _syncService.SyncAsync();
 
         // Assert: Modifying the merged item's dependencies should not affect the local item
-        capturedItem.Should().NotBeNull();
+        Assert.NotNull(capturedItem);
         var newDepId = Guid.NewGuid();
         capturedItem!.Dependencies.Add(newDepId);
 
-        localItem.Dependencies.Should().NotContain(newDepId);
-        localItem.Dependencies.Should().HaveCount(1);
+        Assert.DoesNotContain(newDepId, localItem.Dependencies);
+        Assert.Equal(1, localItem.Dependencies.Count);
     }
 
     #endregion

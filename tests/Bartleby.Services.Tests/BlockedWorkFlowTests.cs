@@ -2,7 +2,6 @@ using Bartleby.Core.Interfaces;
 using Bartleby.Core.Models;
 using Bartleby.Services;
 using Bartleby.Services.Prompts;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -101,11 +100,11 @@ public class BlockedWorkFlowTests
         var response = await _workExecutor.ExecuteAsync(context!);
 
         // Assert
-        response.Outcome.Should().Be(WorkExecutionOutcome.Blocked);
-        _storedQuestions.Should().HaveCount(2);
-        _storedQuestions.Should().Contain(q => q.Question == "What database should be used?");
-        _storedQuestions.Should().Contain(q => q.Question == "What authentication method?");
-        _storedQuestions.All(q => q.WorkItemId == workItem.Id).Should().BeTrue();
+        Assert.Equal(WorkExecutionOutcome.Blocked, response.Outcome);
+        Assert.Equal(2, _storedQuestions.Count);
+        Assert.Contains(_storedQuestions, q => q.Question == "What database should be used?");
+        Assert.Contains(_storedQuestions, q => q.Question == "What authentication method?");
+        Assert.True(_storedQuestions.All(q => q.WorkItemId == workItem.Id));
     }
 
     [Fact]
@@ -164,10 +163,10 @@ public class BlockedWorkFlowTests
         await _workExecutor.ExecuteAsync(context2!);
 
         // Assert
-        capturedUserPrompt.Should().NotBeNull();
-        capturedUserPrompt.Should().Contain("Answered Questions");
-        capturedUserPrompt.Should().Contain("What API version?");
-        capturedUserPrompt.Should().Contain("Use REST API v2");
+        Assert.NotNull(capturedUserPrompt);
+        Assert.Contains("Answered Questions", capturedUserPrompt);
+        Assert.Contains("What API version?", capturedUserPrompt);
+        Assert.Contains("Use REST API v2", capturedUserPrompt);
     }
 
     [Fact]
@@ -196,7 +195,7 @@ public class BlockedWorkFlowTests
         var nextTransformation = await _workExecutor.GetNextTransformationAsync(workItem.Id);
 
         // Assert
-        nextTransformation.Should().Be(TransformationType.AskClarification);
+        Assert.Equal(TransformationType.AskClarification, nextTransformation);
     }
 
     [Fact]
@@ -226,7 +225,7 @@ public class BlockedWorkFlowTests
         var nextTransformation = await _workExecutor.GetNextTransformationAsync(workItem.Id);
 
         // Assert
-        nextTransformation.Should().Be(TransformationType.Plan);
+        Assert.Equal(TransformationType.Plan, nextTransformation);
     }
 
     [Fact]
@@ -263,11 +262,11 @@ public class BlockedWorkFlowTests
         var prompt = _promptTemplateProvider.BuildUserPrompt(context);
 
         // Assert
-        prompt.Should().Contain("## Answered Questions");
-        prompt.Should().Contain("Q: What framework?");
-        prompt.Should().Contain("A: .NET 10");
-        prompt.Should().Contain("Q: What database?");
-        prompt.Should().Contain("A: PostgreSQL");
+        Assert.Contains("## Answered Questions", prompt);
+        Assert.Contains("Q: What framework?", prompt);
+        Assert.Contains("A: .NET 10", prompt);
+        Assert.Contains("Q: What database?", prompt);
+        Assert.Contains("A: PostgreSQL", prompt);
     }
 
     #region Helpers

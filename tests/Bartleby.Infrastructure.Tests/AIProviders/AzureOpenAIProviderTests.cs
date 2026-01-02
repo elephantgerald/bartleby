@@ -3,7 +3,6 @@ using System.ClientModel.Primitives;
 using Bartleby.Core.Interfaces;
 using Bartleby.Core.Models;
 using Bartleby.Infrastructure.AIProviders;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using OpenAI.Chat;
@@ -46,7 +45,7 @@ public class AzureOpenAIProviderTests
     [Fact]
     public void Name_ReturnsAzureOpenAI()
     {
-        _sut.Name.Should().Be("Azure OpenAI");
+        Assert.Equal("Azure OpenAI", _sut.Name);
     }
 
     #endregion
@@ -64,9 +63,9 @@ public class AzureOpenAIProviderTests
         var result = await _sut.ExecuteWorkAsync(workItem, "/work");
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Outcome.Should().Be(WorkExecutionOutcome.Failed);
-        result.ErrorMessage.Should().Contain("endpoint");
+        Assert.False(result.Success);
+        Assert.Equal(WorkExecutionOutcome.Failed, result.Outcome);
+        Assert.Contains("endpoint", result.ErrorMessage);
     }
 
     [Fact]
@@ -80,9 +79,9 @@ public class AzureOpenAIProviderTests
         var result = await _sut.ExecuteWorkAsync(workItem, "/work");
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Outcome.Should().Be(WorkExecutionOutcome.Failed);
-        result.ErrorMessage.Should().Contain("API key");
+        Assert.False(result.Success);
+        Assert.Equal(WorkExecutionOutcome.Failed, result.Outcome);
+        Assert.Contains("API key", result.ErrorMessage);
     }
 
     [Fact]
@@ -96,9 +95,9 @@ public class AzureOpenAIProviderTests
         var result = await _sut.ExecuteWorkAsync(workItem, "/work");
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Outcome.Should().Be(WorkExecutionOutcome.Failed);
-        result.ErrorMessage.Should().Contain("deployment name");
+        Assert.False(result.Success);
+        Assert.Equal(WorkExecutionOutcome.Failed, result.Outcome);
+        Assert.Contains("deployment name", result.ErrorMessage);
     }
 
     [Fact]
@@ -146,11 +145,11 @@ public class AzureOpenAIProviderTests
         var result = await _sut.ExecuteWorkAsync(workItem, "/work");
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Outcome.Should().Be(WorkExecutionOutcome.Completed);
-        result.Summary.Should().Be("Implemented the feature");
-        result.ModifiedFiles.Should().ContainSingle().Which.Should().Be("src/file.cs");
-        result.TokensUsed.Should().Be(150);
+        Assert.True(result.Success);
+        Assert.Equal(WorkExecutionOutcome.Completed, result.Outcome);
+        Assert.Equal("Implemented the feature", result.Summary);
+        Assert.Equal("src/file.cs", Assert.Single(result.ModifiedFiles));
+        Assert.Equal(150, result.TokensUsed);
     }
 
     [Fact]
@@ -175,10 +174,10 @@ public class AzureOpenAIProviderTests
         var result = await _sut.ExecuteWorkAsync(workItem, "/work");
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Outcome.Should().Be(WorkExecutionOutcome.Blocked);
-        result.Questions.Should().HaveCount(2);
-        result.Questions.Should().Contain("What database should be used?");
+        Assert.False(result.Success);
+        Assert.Equal(WorkExecutionOutcome.Blocked, result.Outcome);
+        Assert.Equal(2, result.Questions.Count);
+        Assert.Contains("What database should be used?", result.Questions);
     }
 
     [Fact]
@@ -203,8 +202,8 @@ public class AzureOpenAIProviderTests
         var result = await _sut.ExecuteWorkAsync(workItem, "/work");
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Outcome.Should().Be(WorkExecutionOutcome.NeedsMoreContext);
+        Assert.False(result.Success);
+        Assert.Equal(WorkExecutionOutcome.NeedsMoreContext, result.Outcome);
     }
 
     [Fact]
@@ -222,10 +221,10 @@ public class AzureOpenAIProviderTests
         var result = await _sut.ExecuteWorkAsync(workItem, "/work");
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Outcome.Should().Be(WorkExecutionOutcome.NeedsMoreContext);
-        result.Summary.Should().Contain("Could not parse AI response");
-        result.Summary.Should().Contain("I completed the task successfully.");
+        Assert.False(result.Success);
+        Assert.Equal(WorkExecutionOutcome.NeedsMoreContext, result.Outcome);
+        Assert.Contains("Could not parse AI response", result.Summary);
+        Assert.Contains("I completed the task successfully.", result.Summary);
     }
 
     [Fact]
@@ -243,10 +242,10 @@ public class AzureOpenAIProviderTests
         var result = await _sut.ExecuteWorkAsync(workItem, "/work");
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Outcome.Should().Be(WorkExecutionOutcome.NeedsMoreContext);
-        result.Summary.Should().Contain("Could not parse AI response");
-        result.Summary.Should().Contain("partial json");
+        Assert.False(result.Success);
+        Assert.Equal(WorkExecutionOutcome.NeedsMoreContext, result.Outcome);
+        Assert.Contains("Could not parse AI response", result.Summary);
+        Assert.Contains("partial json", result.Summary);
     }
 
     #endregion
@@ -267,9 +266,9 @@ public class AzureOpenAIProviderTests
         var result = await _sut.ExecuteWorkAsync(workItem, "/work");
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Outcome.Should().Be(WorkExecutionOutcome.Failed);
-        result.ErrorMessage.Should().Contain("authentication");
+        Assert.False(result.Success);
+        Assert.Equal(WorkExecutionOutcome.Failed, result.Outcome);
+        Assert.Contains("authentication", result.ErrorMessage);
     }
 
     [Fact]
@@ -286,8 +285,8 @@ public class AzureOpenAIProviderTests
         var result = await _sut.ExecuteWorkAsync(workItem, "/work");
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("authentication");
+        Assert.False(result.Success);
+        Assert.Contains("authentication", result.ErrorMessage);
     }
 
     [Fact]
@@ -304,9 +303,9 @@ public class AzureOpenAIProviderTests
         var result = await _sut.ExecuteWorkAsync(workItem, "/work");
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Outcome.Should().Be(WorkExecutionOutcome.Failed);
-        result.ErrorMessage.Should().Contain("Rate limit");
+        Assert.False(result.Success);
+        Assert.Equal(WorkExecutionOutcome.Failed, result.Outcome);
+        Assert.Contains("Rate limit", result.ErrorMessage);
     }
 
     [Fact]
@@ -323,9 +322,9 @@ public class AzureOpenAIProviderTests
         var result = await _sut.ExecuteWorkAsync(workItem, "/work");
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Outcome.Should().Be(WorkExecutionOutcome.Failed);
-        result.ErrorMessage.Should().Contain("Something went wrong");
+        Assert.False(result.Success);
+        Assert.Equal(WorkExecutionOutcome.Failed, result.Outcome);
+        Assert.Contains("Something went wrong", result.ErrorMessage);
     }
 
     #endregion
@@ -346,7 +345,7 @@ public class AzureOpenAIProviderTests
         var result = await _sut.TestConnectionAsync();
 
         // Assert
-        result.Should().BeTrue();
+        Assert.True(result);
     }
 
     [Fact]
@@ -361,7 +360,7 @@ public class AzureOpenAIProviderTests
         var result = await _sut.TestConnectionAsync();
 
         // Assert
-        result.Should().BeFalse();
+        Assert.False(result);
     }
 
     [Fact]
@@ -374,7 +373,7 @@ public class AzureOpenAIProviderTests
         var result = await _sut.TestConnectionAsync();
 
         // Assert
-        result.Should().BeFalse();
+        Assert.False(result);
     }
 
     #endregion
@@ -399,7 +398,7 @@ public class AzureOpenAIProviderTests
         var result = await _sut.ExecuteWorkAsync(workItem, "/work");
 
         // Assert
-        result.TokensUsed.Should().Be(700);
+        Assert.Equal(700, result.TokensUsed);
     }
 
     #endregion
@@ -431,10 +430,10 @@ public class AzureOpenAIProviderTests
         var result = await _sut.ExecuteWorkAsync(workItem, "/work");
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Outcome.Should().Be(WorkExecutionOutcome.Completed);
-        result.Summary.Should().Be("Fixed the bug");
-        result.ModifiedFiles.Should().ContainSingle().Which.Should().Be("src/fix.cs");
+        Assert.True(result.Success);
+        Assert.Equal(WorkExecutionOutcome.Completed, result.Outcome);
+        Assert.Equal("Fixed the bug", result.Summary);
+        Assert.Equal("src/fix.cs", Assert.Single(result.ModifiedFiles));
     }
 
     [Fact]
@@ -459,8 +458,8 @@ public class AzureOpenAIProviderTests
         var result = await _sut.ExecuteWorkAsync(workItem, "/work");
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Outcome.Should().Be(WorkExecutionOutcome.NeedsMoreContext);
+        Assert.False(result.Success);
+        Assert.Equal(WorkExecutionOutcome.NeedsMoreContext, result.Outcome);
     }
 
     #endregion
@@ -481,9 +480,9 @@ public class AzureOpenAIProviderTests
         var result = await _sut.ExecuteWorkAsync(workItem, "/work");
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Outcome.Should().Be(WorkExecutionOutcome.Failed);
-        result.ErrorMessage.Should().Contain("not a valid URL");
+        Assert.False(result.Success);
+        Assert.Equal(WorkExecutionOutcome.Failed, result.Outcome);
+        Assert.Contains("not a valid URL", result.ErrorMessage);
     }
 
     #endregion

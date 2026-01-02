@@ -1,7 +1,6 @@
 using Bartleby.Core.Interfaces;
 using Bartleby.Core.Models;
 using Bartleby.Services;
-using FluentAssertions;
 using Moq;
 
 namespace Bartleby.Services.Tests;
@@ -24,15 +23,15 @@ public class DependencyResolverTests
     [Fact]
     public void Constructor_WithNullGraphStore_ThrowsArgumentNullException()
     {
-        var act = () => new DependencyResolver(null!, _workItemRepositoryMock.Object);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("graphStore");
+        var ex = Assert.Throws<ArgumentNullException>(() => new DependencyResolver(null!, _workItemRepositoryMock.Object));
+        Assert.Equal("graphStore", ex.ParamName);
     }
 
     [Fact]
     public void Constructor_WithNullRepository_ThrowsArgumentNullException()
     {
-        var act = () => new DependencyResolver(_graphStoreMock.Object, null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("workItemRepository");
+        var ex = Assert.Throws<ArgumentNullException>(() => new DependencyResolver(_graphStoreMock.Object, null!));
+        Assert.Equal("workItemRepository", ex.ParamName);
     }
 
     #endregion
@@ -56,7 +55,7 @@ public class DependencyResolverTests
         var result = await _resolver.GetReadyWorkItemsAsync();
 
         // Assert
-        result.Should().HaveCount(3);
+        Assert.Equal(3, result.Count);
     }
 
     [Fact]
@@ -69,7 +68,7 @@ public class DependencyResolverTests
         var result = await _resolver.GetReadyWorkItemsAsync();
 
         // Assert
-        result.Should().BeEmpty();
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -86,9 +85,9 @@ public class DependencyResolverTests
         var result = await _resolver.GetReadyWorkItemsAsync();
 
         // Assert
-        result.Should().HaveCount(1);
-        result.Should().Contain(pendingItem);
-        result.Should().NotContain(completedItem);
+        Assert.Equal(1, result.Count);
+        Assert.Contains(pendingItem, result);
+        Assert.DoesNotContain(completedItem, result);
     }
 
     [Fact]
@@ -105,8 +104,8 @@ public class DependencyResolverTests
         var result = await _resolver.GetReadyWorkItemsAsync();
 
         // Assert
-        result.Should().HaveCount(1);
-        result.Should().Contain(pendingItem);
+        Assert.Equal(1, result.Count);
+        Assert.Contains(pendingItem, result);
     }
 
     [Fact]
@@ -123,8 +122,8 @@ public class DependencyResolverTests
         var result = await _resolver.GetReadyWorkItemsAsync();
 
         // Assert
-        result.Should().HaveCount(1);
-        result.Should().Contain(pendingItem);
+        Assert.Equal(1, result.Count);
+        Assert.Contains(pendingItem, result);
     }
 
     [Fact]
@@ -141,8 +140,8 @@ public class DependencyResolverTests
         var result = await _resolver.GetReadyWorkItemsAsync();
 
         // Assert
-        result.Should().HaveCount(1);
-        result.Should().Contain(pendingItem);
+        Assert.Equal(1, result.Count);
+        Assert.Contains(pendingItem, result);
     }
 
     #endregion
@@ -165,8 +164,8 @@ public class DependencyResolverTests
         var result = await _resolver.GetReadyWorkItemsAsync();
 
         // Assert
-        result.Should().HaveCount(1);
-        result.Should().Contain(itemB);
+        Assert.Equal(1, result.Count);
+        Assert.Contains(itemB, result);
     }
 
     [Fact]
@@ -188,8 +187,8 @@ public class DependencyResolverTests
         var result = await _resolver.GetReadyWorkItemsAsync();
 
         // Assert
-        result.Should().HaveCount(1);
-        result.Should().Contain(itemC);
+        Assert.Equal(1, result.Count);
+        Assert.Contains(itemC, result);
     }
 
     [Fact]
@@ -213,8 +212,8 @@ public class DependencyResolverTests
         var result = await _resolver.GetReadyWorkItemsAsync();
 
         // Assert
-        result.Should().HaveCount(1);
-        result.Should().Contain(itemA);
+        Assert.Equal(1, result.Count);
+        Assert.Contains(itemA, result);
     }
 
     #endregion
@@ -237,9 +236,9 @@ public class DependencyResolverTests
         var result = await _resolver.GetReadyWorkItemsAsync();
 
         // Assert
-        result.Should().HaveCount(1);
-        result.Should().Contain(itemA);
-        result.Should().NotContain(itemB);
+        Assert.Equal(1, result.Count);
+        Assert.Contains(itemA, result);
+        Assert.DoesNotContain(itemB, result);
     }
 
     [Fact]
@@ -261,9 +260,9 @@ public class DependencyResolverTests
         var result = await _resolver.GetReadyWorkItemsAsync();
 
         // Assert
-        result.Should().HaveCount(1);
-        result.Should().Contain(itemB);
-        result.Should().NotContain(itemC);
+        Assert.Equal(1, result.Count);
+        Assert.Contains(itemB, result);
+        Assert.DoesNotContain(itemC, result);
     }
 
     #endregion
@@ -292,10 +291,10 @@ public class DependencyResolverTests
         var result = await _resolver.GetReadyWorkItemsAsync();
 
         // Assert
-        result.Should().HaveCount(3);
-        result[0].Should().Be(oldItem);
-        result[1].Should().Be(middleItem);
-        result[2].Should().Be(newItem);
+        Assert.Equal(3, result.Count);
+        Assert.Equal(oldItem, result[0]);
+        Assert.Equal(middleItem, result[1]);
+        Assert.Equal(newItem, result[2]);
     }
 
     #endregion
@@ -313,7 +312,7 @@ public class DependencyResolverTests
         var result = await _resolver.IsReadyAsync(itemId);
 
         // Assert
-        result.Should().BeTrue();
+        Assert.True(result);
     }
 
     [Fact]
@@ -328,7 +327,7 @@ public class DependencyResolverTests
         var result = await _resolver.IsReadyAsync(item.Id);
 
         // Assert
-        result.Should().BeTrue();
+        Assert.True(result);
     }
 
     [Fact]
@@ -345,7 +344,7 @@ public class DependencyResolverTests
         var result = await _resolver.IsReadyAsync(itemB.Id);
 
         // Assert
-        result.Should().BeTrue();
+        Assert.True(result);
     }
 
     [Fact]
@@ -362,7 +361,7 @@ public class DependencyResolverTests
         var result = await _resolver.IsReadyAsync(itemB.Id);
 
         // Assert
-        result.Should().BeFalse();
+        Assert.False(result);
     }
 
     [Fact]
@@ -382,8 +381,8 @@ public class DependencyResolverTests
         var resultB = await _resolver.IsReadyAsync(itemB.Id);
 
         // Assert - both items in the cycle should return false
-        resultA.Should().BeFalse();
-        resultB.Should().BeFalse();
+        Assert.False(resultA);
+        Assert.False(resultB);
     }
 
     #endregion
@@ -407,7 +406,7 @@ public class DependencyResolverTests
         var result = await _resolver.DetectCircularDependenciesAsync();
 
         // Assert
-        result.Should().BeEmpty();
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -426,9 +425,9 @@ public class DependencyResolverTests
         var result = await _resolver.DetectCircularDependenciesAsync();
 
         // Assert
-        result.Should().NotBeEmpty();
-        result.SelectMany(c => c).Should().Contain(itemA.Id);
-        result.SelectMany(c => c).Should().Contain(itemB.Id);
+        Assert.NotEmpty(result);
+        Assert.Contains(itemA.Id, result.SelectMany(c => c));
+        Assert.Contains(itemB.Id, result.SelectMany(c => c));
     }
 
     [Fact]
@@ -448,7 +447,7 @@ public class DependencyResolverTests
         var result = await _resolver.DetectCircularDependenciesAsync();
 
         // Assert
-        result.Should().NotBeEmpty();
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -464,7 +463,7 @@ public class DependencyResolverTests
         var result = await _resolver.DetectCircularDependenciesAsync();
 
         // Assert
-        result.Should().NotBeEmpty();
+        Assert.NotEmpty(result);
     }
 
     [Fact]
@@ -477,7 +476,7 @@ public class DependencyResolverTests
         var result = await _resolver.DetectCircularDependenciesAsync();
 
         // Assert
-        result.Should().BeEmpty();
+        Assert.Empty(result);
     }
 
     #endregion
@@ -495,7 +494,7 @@ public class DependencyResolverTests
         var result = await _resolver.GetDependencyChainAsync(itemId);
 
         // Assert
-        result.Should().BeEmpty();
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -510,7 +509,7 @@ public class DependencyResolverTests
         var result = await _resolver.GetDependencyChainAsync(item.Id);
 
         // Assert
-        result.Should().BeEmpty();
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -527,8 +526,8 @@ public class DependencyResolverTests
         var result = await _resolver.GetDependencyChainAsync(itemB.Id);
 
         // Assert
-        result.Should().HaveCount(1);
-        result.Should().Contain(itemA.Id);
+        Assert.Equal(1, result.Count);
+        Assert.Contains(itemA.Id, result);
     }
 
     [Fact]
@@ -548,9 +547,9 @@ public class DependencyResolverTests
         var result = await _resolver.GetDependencyChainAsync(itemC.Id);
 
         // Assert
-        result.Should().HaveCount(2);
-        result.Should().Contain(itemA.Id);
-        result.Should().Contain(itemB.Id);
+        Assert.Equal(2, result.Count);
+        Assert.Contains(itemA.Id, result);
+        Assert.Contains(itemB.Id, result);
     }
 
     #endregion
@@ -583,11 +582,11 @@ public class DependencyResolverTests
         var result = await _resolver.ResolveAsync();
 
         // Assert
-        result.ReadyItems.Should().Contain(itemA);
-        result.BlockedItems.Should().Contain(itemB);
-        result.HasCycles.Should().BeTrue();
-        result.CyclicItems.Should().Contain(itemC);
-        result.CyclicItems.Should().Contain(itemD);
+        Assert.Contains(itemA, result.ReadyItems);
+        Assert.Contains(itemB, result.BlockedItems);
+        Assert.True(result.HasCycles);
+        Assert.Contains(itemC, result.CyclicItems);
+        Assert.Contains(itemD, result.CyclicItems);
     }
 
     [Fact]
@@ -601,8 +600,8 @@ public class DependencyResolverTests
         var result = await _resolver.ResolveAsync();
 
         // Assert
-        result.HasCycles.Should().BeFalse();
-        result.Cycles.Should().BeEmpty();
+        Assert.False(result.HasCycles);
+        Assert.Empty(result.Cycles);
     }
 
     #endregion

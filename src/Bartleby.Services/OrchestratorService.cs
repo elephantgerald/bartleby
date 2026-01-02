@@ -192,6 +192,12 @@ public class OrchestratorService : IOrchestratorService, IDisposable
 
     private void OnTimerElapsed(object? state)
     {
+        // Don't execute if disposed
+        if (_disposed)
+        {
+            return;
+        }
+
         // Avoid overlapping executions
         if (!_workSemaphore.Wait(0))
         {
@@ -201,11 +207,35 @@ public class OrchestratorService : IOrchestratorService, IDisposable
 
         try
         {
-            _workLoopTask = ExecuteWorkCycleAsync(_serviceCts?.Token ?? CancellationToken.None);
+            // Capture CTS reference and get token safely to avoid race condition
+            // where CTS is disposed between null check and Token access
+            var cts = _serviceCts;
+            CancellationToken token;
+
+            if (cts == null)
+            {
+                token = CancellationToken.None;
+            }
+            else
+            {
+                try
+                {
+                    token = cts.Token;
+                }
+                catch (ObjectDisposedException)
+                {
+                    // CTS was disposed between our check and token access
+                    _workSemaphore.Release();
+                    return;
+                }
+            }
+
+            _workLoopTask = ExecuteWorkCycleAsync(token);
         }
-        finally
+        catch
         {
-            // Note: Semaphore is released in ExecuteWorkCycleAsync
+            _workSemaphore.Release();
+            throw;
         }
     }
 

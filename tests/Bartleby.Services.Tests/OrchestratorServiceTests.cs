@@ -1,7 +1,6 @@
 using Bartleby.Core.Interfaces;
 using Bartleby.Core.Models;
 using Bartleby.Services;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -87,71 +86,71 @@ public class OrchestratorServiceTests : IDisposable
     [Fact]
     public void Constructor_WithNullDependencyResolver_ThrowsArgumentNullException()
     {
-        var act = () => new OrchestratorService(
+        var ex = Assert.Throws<ArgumentNullException>(() => new OrchestratorService(
             null!,
             _workExecutorMock.Object,
             _workItemRepoMock.Object,
             _settingsRepoMock.Object,
             _loggerMock.Object,
-            _timeProvider);
+            _timeProvider));
 
-        act.Should().Throw<ArgumentNullException>().WithParameterName("dependencyResolver");
+        Assert.Equal("dependencyResolver", ex.ParamName);
     }
 
     [Fact]
     public void Constructor_WithNullWorkExecutor_ThrowsArgumentNullException()
     {
-        var act = () => new OrchestratorService(
+        var ex = Assert.Throws<ArgumentNullException>(() => new OrchestratorService(
             _dependencyResolverMock.Object,
             null!,
             _workItemRepoMock.Object,
             _settingsRepoMock.Object,
             _loggerMock.Object,
-            _timeProvider);
+            _timeProvider));
 
-        act.Should().Throw<ArgumentNullException>().WithParameterName("workExecutor");
+        Assert.Equal("workExecutor", ex.ParamName);
     }
 
     [Fact]
     public void Constructor_WithNullWorkItemRepository_ThrowsArgumentNullException()
     {
-        var act = () => new OrchestratorService(
+        var ex = Assert.Throws<ArgumentNullException>(() => new OrchestratorService(
             _dependencyResolverMock.Object,
             _workExecutorMock.Object,
             null!,
             _settingsRepoMock.Object,
             _loggerMock.Object,
-            _timeProvider);
+            _timeProvider));
 
-        act.Should().Throw<ArgumentNullException>().WithParameterName("workItemRepository");
+        Assert.Equal("workItemRepository", ex.ParamName);
     }
 
     [Fact]
     public void Constructor_WithNullSettingsRepository_ThrowsArgumentNullException()
     {
-        var act = () => new OrchestratorService(
+        var ex = Assert.Throws<ArgumentNullException>(() => new OrchestratorService(
             _dependencyResolverMock.Object,
             _workExecutorMock.Object,
             _workItemRepoMock.Object,
             null!,
             _loggerMock.Object,
-            _timeProvider);
+            _timeProvider));
 
-        act.Should().Throw<ArgumentNullException>().WithParameterName("settingsRepository");
+        Assert.Equal("settingsRepository", ex.ParamName);
     }
 
     [Fact]
     public void Constructor_WithNullLogger_ThrowsArgumentNullException()
     {
-        var act = () => new OrchestratorService(
+        var ex = Assert.Throws<ArgumentNullException>(() => new OrchestratorService(
             _dependencyResolverMock.Object,
             _workExecutorMock.Object,
             _workItemRepoMock.Object,
             _settingsRepoMock.Object,
             null!,
-            _timeProvider);
+            _timeProvider));
 
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
+        Assert.Equal("logger", ex.ParamName);
     }
 
     [Fact]
@@ -165,7 +164,7 @@ public class OrchestratorServiceTests : IDisposable
             _loggerMock.Object,
             null);
 
-        service.Should().NotBeNull();
+        Assert.NotNull(service);
         service.Dispose();
     }
 
@@ -176,8 +175,8 @@ public class OrchestratorServiceTests : IDisposable
     [Fact]
     public void InitialState_IsStopped()
     {
-        _sut.State.Should().Be(OrchestratorState.Stopped);
-        _sut.IsRunning.Should().BeFalse();
+        Assert.Equal(OrchestratorState.Stopped, _sut.State);
+        Assert.False(_sut.IsRunning);
     }
 
     [Fact]
@@ -185,9 +184,9 @@ public class OrchestratorServiceTests : IDisposable
     {
         await _sut.StartAsync();
 
-        _sut.IsRunning.Should().BeTrue();
+        Assert.True(_sut.IsRunning);
         // State may be Idle or Working depending on timing
-        _sut.State.Should().BeOneOf(OrchestratorState.Idle, OrchestratorState.Working);
+        Assert.Contains(_sut.State, new[] { OrchestratorState.Idle, OrchestratorState.Working });
     }
 
     [Fact]
@@ -195,9 +194,9 @@ public class OrchestratorServiceTests : IDisposable
     {
         await _sut.StartAsync();
 
-        _sut.Stats.SessionStartedAt.Should().Be(_timeProvider.UtcNow);
-        _sut.Stats.WorkItemsCompleted.Should().Be(0);
-        _sut.Stats.WorkItemsFailed.Should().Be(0);
+        Assert.Equal(_timeProvider.UtcNow, _sut.Stats.SessionStartedAt);
+        Assert.Equal(0, _sut.Stats.WorkItemsCompleted);
+        Assert.Equal(0, _sut.Stats.WorkItemsFailed);
     }
 
     [Fact]
@@ -209,7 +208,7 @@ public class OrchestratorServiceTests : IDisposable
         await Task.Delay(50); // Small delay
         await _sut.StartAsync();
 
-        _sut.Stats.SessionStartedAt.Should().Be(firstStartTime);
+        Assert.Equal(firstStartTime, _sut.Stats.SessionStartedAt);
     }
 
     [Fact]
@@ -218,8 +217,8 @@ public class OrchestratorServiceTests : IDisposable
         await _sut.StartAsync();
         await _sut.StopAsync();
 
-        _sut.State.Should().Be(OrchestratorState.Stopped);
-        _sut.IsRunning.Should().BeFalse();
+        Assert.Equal(OrchestratorState.Stopped, _sut.State);
+        Assert.False(_sut.IsRunning);
     }
 
     [Fact]
@@ -228,20 +227,20 @@ public class OrchestratorServiceTests : IDisposable
         // Should not throw
         await _sut.StopAsync();
 
-        _sut.State.Should().Be(OrchestratorState.Stopped);
+        Assert.Equal(OrchestratorState.Stopped, _sut.State);
     }
 
     [Fact]
     public async Task StartAsync_ThenStopAsync_ThenStartAsync_Works()
     {
         await _sut.StartAsync();
-        _sut.IsRunning.Should().BeTrue();
+        Assert.True(_sut.IsRunning);
 
         await _sut.StopAsync();
-        _sut.IsRunning.Should().BeFalse();
+        Assert.False(_sut.IsRunning);
 
         await _sut.StartAsync();
-        _sut.IsRunning.Should().BeTrue();
+        Assert.True(_sut.IsRunning);
     }
 
     #endregion
@@ -256,7 +255,7 @@ public class OrchestratorServiceTests : IDisposable
 
         await _sut.StartAsync();
 
-        stateChanges.Should().Contain(e => e.NewState == OrchestratorState.Starting);
+        Assert.Contains(stateChanges, e => e.NewState == OrchestratorState.Starting);
     }
 
     [Fact]
@@ -269,8 +268,8 @@ public class OrchestratorServiceTests : IDisposable
 
         await _sut.StopAsync();
 
-        stateChanges.Should().Contain(e => e.NewState == OrchestratorState.Stopping);
-        stateChanges.Should().Contain(e => e.NewState == OrchestratorState.Stopped);
+        Assert.Contains(stateChanges, e => e.NewState == OrchestratorState.Stopping);
+        Assert.Contains(stateChanges, e => e.NewState == OrchestratorState.Stopped);
     }
 
     #endregion
@@ -290,7 +289,7 @@ public class OrchestratorServiceTests : IDisposable
         await _sut.StartAsync();
         await Task.Delay(100); // Allow work cycle to run
 
-        _sut.State.Should().Be(OrchestratorState.QuietHours);
+        Assert.Equal(OrchestratorState.QuietHours, _sut.State);
     }
 
     [Fact]
@@ -306,7 +305,7 @@ public class OrchestratorServiceTests : IDisposable
         await _sut.StartAsync();
         await Task.Delay(100); // Allow work cycle to run
 
-        _sut.State.Should().NotBe(OrchestratorState.QuietHours);
+        Assert.NotEqual(OrchestratorState.QuietHours, _sut.State);
     }
 
     [Fact]
@@ -322,7 +321,7 @@ public class OrchestratorServiceTests : IDisposable
         await _sut.StartAsync();
         await Task.Delay(100); // Allow work cycle to run
 
-        _sut.State.Should().NotBe(OrchestratorState.QuietHours);
+        Assert.NotEqual(OrchestratorState.QuietHours, _sut.State);
     }
 
     [Theory]
@@ -346,11 +345,11 @@ public class OrchestratorServiceTests : IDisposable
 
         if (expectedInQuietHours)
         {
-            _sut.State.Should().Be(OrchestratorState.QuietHours);
+            Assert.Equal(OrchestratorState.QuietHours, _sut.State);
         }
         else
         {
-            _sut.State.Should().NotBe(OrchestratorState.QuietHours);
+            Assert.NotEqual(OrchestratorState.QuietHours, _sut.State);
         }
     }
 
@@ -374,11 +373,11 @@ public class OrchestratorServiceTests : IDisposable
 
         if (expectedInQuietHours)
         {
-            _sut.State.Should().Be(OrchestratorState.QuietHours);
+            Assert.Equal(OrchestratorState.QuietHours, _sut.State);
         }
         else
         {
-            _sut.State.Should().NotBe(OrchestratorState.QuietHours);
+            Assert.NotEqual(OrchestratorState.QuietHours, _sut.State);
         }
     }
 
@@ -396,7 +395,7 @@ public class OrchestratorServiceTests : IDisposable
         await _sut.StartAsync();
         await Task.Delay(100);
 
-        _sut.State.Should().Be(OrchestratorState.BudgetExhausted);
+        Assert.Equal(OrchestratorState.BudgetExhausted, _sut.State);
     }
 
     [Fact]
@@ -409,7 +408,7 @@ public class OrchestratorServiceTests : IDisposable
         await _sut.StartAsync();
         await Task.Delay(100);
 
-        _sut.State.Should().NotBe(OrchestratorState.BudgetExhausted);
+        Assert.NotEqual(OrchestratorState.BudgetExhausted, _sut.State);
     }
 
     [Fact]
@@ -422,7 +421,7 @@ public class OrchestratorServiceTests : IDisposable
         await _sut.StartAsync();
         await Task.Delay(100);
 
-        _sut.State.Should().NotBe(OrchestratorState.BudgetExhausted);
+        Assert.NotEqual(OrchestratorState.BudgetExhausted, _sut.State);
     }
 
     [Fact]
@@ -480,7 +479,7 @@ public class OrchestratorServiceTests : IDisposable
         await _sut.StartAsync();
         await Task.Delay(200); // Allow work cycle to complete
 
-        _sut.Stats.TokensUsedThisSession.Should().BeGreaterThanOrEqualTo(500);
+        Assert.True(_sut.Stats.TokensUsedThisSession >= 500);
     }
 
     #endregion
@@ -497,7 +496,7 @@ public class OrchestratorServiceTests : IDisposable
         await _sut.StartAsync();
         await Task.Delay(100);
 
-        _sut.State.Should().Be(OrchestratorState.Idle);
+        Assert.Equal(OrchestratorState.Idle, _sut.State);
     }
 
     [Fact]
@@ -584,7 +583,7 @@ public class OrchestratorServiceTests : IDisposable
         await _sut.StartAsync();
         await Task.Delay(200);
 
-        statusChanges.Should().Contain(e => e.NewStatus == WorkItemStatus.InProgress);
+        Assert.Contains(statusChanges, e => e.NewStatus == WorkItemStatus.InProgress);
     }
 
     #endregion
@@ -636,7 +635,7 @@ public class OrchestratorServiceTests : IDisposable
         await _sut.StartAsync();
         await Task.Delay(200);
 
-        finalStatus.Should().Be(WorkItemStatus.Complete);
+        Assert.Equal(WorkItemStatus.Complete, finalStatus);
     }
 
     [Fact]
@@ -685,7 +684,7 @@ public class OrchestratorServiceTests : IDisposable
         await _sut.StartAsync();
         await Task.Delay(200);
 
-        finalStatus.Should().Be(WorkItemStatus.Blocked);
+        Assert.Equal(WorkItemStatus.Blocked, finalStatus);
     }
 
     [Fact]
@@ -737,7 +736,7 @@ public class OrchestratorServiceTests : IDisposable
         await Task.Delay(200);
 
         // Should return to Ready for retry since AttemptCount < MaxRetryAttempts
-        finalStatus.Should().Be(WorkItemStatus.Ready);
+        Assert.Equal(WorkItemStatus.Ready, finalStatus);
     }
 
     [Fact]
@@ -761,7 +760,7 @@ public class OrchestratorServiceTests : IDisposable
         await _sut.StartAsync();
         await Task.Delay(200);
 
-        finalStatus.Should().Be(WorkItemStatus.Failed);
+        Assert.Equal(WorkItemStatus.Failed, finalStatus);
     }
 
     #endregion

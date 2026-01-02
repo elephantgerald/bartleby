@@ -1,7 +1,6 @@
 using Bartleby.Core.Interfaces;
 using Bartleby.Core.Models;
 using Bartleby.Infrastructure.WorkSources;
-using FluentAssertions;
 using Moq;
 
 namespace Bartleby.Infrastructure.Tests.WorkSources;
@@ -39,7 +38,7 @@ public class GitHubWorkSourceTests
     [Fact]
     public void Name_ReturnsGitHub()
     {
-        _sut.Name.Should().Be("GitHub");
+        Assert.Equal("GitHub", _sut.Name);
     }
 
     #endregion
@@ -56,7 +55,7 @@ public class GitHubWorkSourceTests
         var result = await _sut.SyncAsync();
 
         // Assert
-        result.Should().BeEmpty();
+        Assert.Empty(result);
         _gitHubApiClientMock.Verify(
             c => c.GetIssuesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -72,7 +71,7 @@ public class GitHubWorkSourceTests
         var result = await _sut.SyncAsync();
 
         // Assert
-        result.Should().BeEmpty();
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -87,7 +86,7 @@ public class GitHubWorkSourceTests
         var result = await _sut.SyncAsync();
 
         // Assert
-        result.Should().BeEmpty();
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -105,14 +104,14 @@ public class GitHubWorkSourceTests
 
         // Assert
         var workItems = result.ToList();
-        workItems.Should().HaveCount(1);
+        Assert.Equal(1, workItems.Count);
 
         var workItem = workItems[0];
-        workItem.Title.Should().Be("Test Issue");
-        workItem.Description.Should().Be("Test body");
-        workItem.ExternalId.Should().Be("1");
-        workItem.Source.Should().Be("GitHub");
-        workItem.ExternalUrl.Should().Be("https://github.com/test-owner/test-repo/issues/1");
+        Assert.Equal("Test Issue", workItem.Title);
+        Assert.Equal("Test body", workItem.Description);
+        Assert.Equal("1", workItem.ExternalId);
+        Assert.Equal("GitHub", workItem.Source);
+        Assert.Equal("https://github.com/test-owner/test-repo/issues/1", workItem.ExternalUrl);
     }
 
     [Fact]
@@ -134,8 +133,12 @@ public class GitHubWorkSourceTests
         var result = await _sut.SyncAsync();
 
         // Assert
-        result.Should().HaveCount(3);
-        result.Select(w => w.ExternalId).Should().BeEquivalentTo(["1", "2", "3"]);
+        var resultList = result.ToList();
+        Assert.Equal(3, resultList.Count);
+        var externalIds = resultList.Select(w => w.ExternalId).ToList();
+        Assert.Contains("1", externalIds);
+        Assert.Contains("2", externalIds);
+        Assert.Contains("3", externalIds);
     }
 
     [Fact]
@@ -153,8 +156,9 @@ public class GitHubWorkSourceTests
         var result = await _sut.SyncAsync();
 
         // Assert
-        result.Should().HaveCount(1);
-        result.First().ExternalId.Should().Be("1");
+        var resultList = result.ToList();
+        Assert.Equal(1, resultList.Count);
+        Assert.Equal("1", resultList.First().ExternalId);
     }
 
     [Fact]
@@ -172,7 +176,7 @@ public class GitHubWorkSourceTests
         var result2 = await _sut.SyncAsync();
 
         // Assert
-        result1.First().Id.Should().Be(result2.First().Id);
+        Assert.Equal(result2.First().Id, result1.First().Id);
     }
 
     [Fact]
@@ -189,7 +193,10 @@ public class GitHubWorkSourceTests
         var result = await _sut.SyncAsync();
 
         // Assert
-        result.First().Labels.Should().BeEquivalentTo(["bug", "high-priority"]);
+        var labels = result.First().Labels;
+        Assert.Contains("bug", labels);
+        Assert.Contains("high-priority", labels);
+        Assert.Equal(2, labels.Count);
     }
 
     #endregion
@@ -218,7 +225,7 @@ public class GitHubWorkSourceTests
         var result = await _sut.SyncAsync();
 
         // Assert
-        result.First().Status.Should().Be(expectedStatus);
+        Assert.Equal(expectedStatus, result.First().Status);
     }
 
     [Fact]
@@ -235,7 +242,7 @@ public class GitHubWorkSourceTests
         var result = await _sut.SyncAsync();
 
         // Assert
-        result.First().Status.Should().Be(WorkItemStatus.Pending);
+        Assert.Equal(WorkItemStatus.Pending, result.First().Status);
     }
 
     [Fact]
@@ -252,7 +259,7 @@ public class GitHubWorkSourceTests
         var result = await _sut.SyncAsync();
 
         // Assert
-        result.First().Status.Should().Be(WorkItemStatus.Pending);
+        Assert.Equal(WorkItemStatus.Pending, result.First().Status);
     }
 
     [Fact]
@@ -269,7 +276,7 @@ public class GitHubWorkSourceTests
         var result = await _sut.SyncAsync();
 
         // Assert
-        result.First().Status.Should().Be(WorkItemStatus.Ready);
+        Assert.Equal(WorkItemStatus.Ready, result.First().Status);
     }
 
     #endregion
@@ -333,8 +340,8 @@ public class GitHubWorkSourceTests
         await _sut.UpdateStatusAsync(workItem);
 
         // Assert
-        capturedUpdate.Should().NotBeNull();
-        capturedUpdate!.IsClosed.Should().BeTrue();
+        Assert.NotNull(capturedUpdate);
+        Assert.True(capturedUpdate!.IsClosed);
     }
 
     [Fact]
@@ -363,8 +370,8 @@ public class GitHubWorkSourceTests
         await _sut.UpdateStatusAsync(workItem);
 
         // Assert
-        capturedUpdate.Should().NotBeNull();
-        capturedUpdate!.Labels.Should().Contain("bartleby:in-progress");
+        Assert.NotNull(capturedUpdate);
+        Assert.Contains("bartleby:in-progress", capturedUpdate!.Labels);
     }
 
     [Fact]
@@ -393,10 +400,10 @@ public class GitHubWorkSourceTests
         await _sut.UpdateStatusAsync(workItem);
 
         // Assert
-        capturedUpdate.Should().NotBeNull();
-        capturedUpdate!.Labels.Should().Contain("bug");
-        capturedUpdate.Labels.Should().Contain("high-priority");
-        capturedUpdate.Labels.Should().Contain("bartleby:ready");
+        Assert.NotNull(capturedUpdate);
+        Assert.Contains("bug", capturedUpdate!.Labels);
+        Assert.Contains("high-priority", capturedUpdate.Labels);
+        Assert.Contains("bartleby:ready", capturedUpdate.Labels);
     }
 
     [Fact]
@@ -425,11 +432,11 @@ public class GitHubWorkSourceTests
         await _sut.UpdateStatusAsync(workItem);
 
         // Assert - old status label removed, new one added, non-status labels preserved
-        capturedUpdate.Should().NotBeNull();
-        capturedUpdate!.Labels.Should().Contain("bug");
-        capturedUpdate.Labels.Should().Contain("high-priority");
-        capturedUpdate.Labels.Should().Contain("bartleby:in-progress");
-        capturedUpdate.Labels.Should().NotContain("bartleby:ready");
+        Assert.NotNull(capturedUpdate);
+        Assert.Contains("bug", capturedUpdate!.Labels);
+        Assert.Contains("high-priority", capturedUpdate.Labels);
+        Assert.Contains("bartleby:in-progress", capturedUpdate.Labels);
+        Assert.DoesNotContain("bartleby:ready", capturedUpdate.Labels);
     }
 
     #endregion
@@ -511,7 +518,7 @@ public class GitHubWorkSourceTests
         var result = await _sut.TestConnectionAsync();
 
         // Assert
-        result.Should().BeFalse();
+        Assert.False(result);
     }
 
     [Fact]
@@ -524,7 +531,7 @@ public class GitHubWorkSourceTests
         var result = await _sut.TestConnectionAsync();
 
         // Assert
-        result.Should().BeFalse();
+        Assert.False(result);
     }
 
     [Fact]
@@ -539,7 +546,7 @@ public class GitHubWorkSourceTests
         var result = await _sut.TestConnectionAsync();
 
         // Assert
-        result.Should().BeTrue();
+        Assert.True(result);
     }
 
     [Fact]
@@ -554,7 +561,7 @@ public class GitHubWorkSourceTests
         var result = await _sut.TestConnectionAsync();
 
         // Assert
-        result.Should().BeFalse();
+        Assert.False(result);
     }
 
     [Fact]
@@ -569,7 +576,7 @@ public class GitHubWorkSourceTests
         var result = await _sut.TestConnectionAsync();
 
         // Assert
-        result.Should().BeFalse();
+        Assert.False(result);
     }
 
     #endregion
@@ -618,7 +625,7 @@ public class GitHubWorkSourceTests
         var result = await _sut.SyncAsync();
 
         // Assert
-        result.First().Title.Should().Be(string.Empty);
+        Assert.Equal(string.Empty, result.First().Title);
     }
 
     [Fact]
@@ -643,7 +650,7 @@ public class GitHubWorkSourceTests
         var result = await _sut.SyncAsync();
 
         // Assert
-        result.First().Description.Should().Be(string.Empty);
+        Assert.Equal(string.Empty, result.First().Description);
     }
 
     [Fact]
@@ -661,7 +668,7 @@ public class GitHubWorkSourceTests
         var result = await _sut.SyncAsync();
 
         // Assert
-        result.First().Title.Should().Be(specialTitle);
+        Assert.Equal(specialTitle, result.First().Title);
     }
 
     [Fact]
@@ -679,7 +686,7 @@ public class GitHubWorkSourceTests
         var result = await _sut.SyncAsync();
 
         // Assert
-        result.First().Title.Should().Be(unicodeTitle);
+        Assert.Equal(unicodeTitle, result.First().Title);
     }
 
     #endregion

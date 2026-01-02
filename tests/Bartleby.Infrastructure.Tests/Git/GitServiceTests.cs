@@ -1,7 +1,6 @@
 using Bartleby.Core.Interfaces;
 using Bartleby.Core.Models;
 using Bartleby.Infrastructure.Git;
-using FluentAssertions;
 using LibGit2Sharp;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -36,7 +35,7 @@ public class GitServiceTests
         var branchName = _sut.GenerateBranchName(workItem);
 
         // Assert
-        branchName.Should().Be("bartleby/123-add-login-feature");
+        Assert.Equal("bartleby/123-add-login-feature", branchName);
     }
 
     [Fact]
@@ -50,8 +49,8 @@ public class GitServiceTests
         var branchName = _sut.GenerateBranchName(workItem);
 
         // Assert
-        branchName.Should().StartWith("bartleby/");
-        branchName.Should().EndWith("-fix-bug");
+        Assert.StartsWith("bartleby/", branchName);
+        Assert.EndsWith("-fix-bug", branchName);
     }
 
     [Fact]
@@ -64,7 +63,7 @@ public class GitServiceTests
         var branchName = _sut.GenerateBranchName(workItem);
 
         // Assert
-        branchName.Should().Be("bartleby/456-fix-bug-123-urgent-team");
+        Assert.Equal("bartleby/456-fix-bug-123-urgent-team", branchName);
     }
 
     [Fact]
@@ -79,8 +78,8 @@ public class GitServiceTests
 
         // Assert
         // "bartleby/789-" = 13 chars, title part should be 40 chars max
-        branchName.Length.Should().BeLessThanOrEqualTo(13 + 40);
-        branchName.Should().StartWith("bartleby/789-");
+        Assert.True(branchName.Length <= 13 + 40);
+        Assert.StartsWith("bartleby/789-", branchName);
     }
 
     [Fact]
@@ -105,8 +104,8 @@ public class GitServiceTests
         var message = _sut.GenerateCommitMessage(workItem, result);
 
         // Assert
-        message.Should().StartWith("fix: Null reference exception in login");
-        message.Should().Contain("Fixed null check in authentication flow");
+        Assert.StartsWith("fix: Null reference exception in login", message);
+        Assert.Contains("Fixed null check in authentication flow", message);
     }
 
     [Fact]
@@ -120,7 +119,7 @@ public class GitServiceTests
         var message = _sut.GenerateCommitMessage(workItem, result);
 
         // Assert
-        message.Should().StartWith("feat: Add user dashboard");
+        Assert.StartsWith("feat: Add user dashboard", message);
     }
 
     [Fact]
@@ -134,7 +133,7 @@ public class GitServiceTests
         var message = _sut.GenerateCommitMessage(workItem, result);
 
         // Assert
-        message.Should().StartWith("docs: Update README");
+        Assert.StartsWith("docs: Update README", message);
     }
 
     [Fact]
@@ -148,7 +147,7 @@ public class GitServiceTests
         var message = _sut.GenerateCommitMessage(workItem, result);
 
         // Assert
-        message.Should().StartWith("test: Add unit tests for auth");
+        Assert.StartsWith("test: Add unit tests for auth", message);
     }
 
     [Fact]
@@ -162,7 +161,7 @@ public class GitServiceTests
         var message = _sut.GenerateCommitMessage(workItem, result);
 
         // Assert
-        message.Should().StartWith("fix: Fix login issue");
+        Assert.StartsWith("fix: Fix login issue", message);
     }
 
     [Fact]
@@ -176,7 +175,7 @@ public class GitServiceTests
         var message = _sut.GenerateCommitMessage(workItem, result);
 
         // Assert
-        message.Should().StartWith("feat: Add new feature");
+        Assert.StartsWith("feat: Add new feature", message);
     }
 
     [Fact]
@@ -190,7 +189,7 @@ public class GitServiceTests
         var message = _sut.GenerateCommitMessage(workItem, result);
 
         // Assert
-        message.Should().Contain("Ref: https://github.com/test/repo/issues/42");
+        Assert.Contains("Ref: https://github.com/test/repo/issues/42", message);
     }
 
     [Fact]
@@ -206,9 +205,9 @@ public class GitServiceTests
         var message = _sut.GenerateCommitMessage(workItem, result);
 
         // Assert
-        message.Should().Contain("Modified files:");
-        message.Should().Contain("- src/Service.cs");
-        message.Should().Contain("- src/Controller.cs");
+        Assert.Contains("Modified files:", message);
+        Assert.Contains("- src/Service.cs", message);
+        Assert.Contains("- src/Controller.cs", message);
     }
 
     [Fact]
@@ -223,9 +222,9 @@ public class GitServiceTests
         var message = _sut.GenerateCommitMessage(workItem, result);
 
         // Assert
-        message.Should().Contain("file10.cs");
-        message.Should().NotContain("file11.cs");
-        message.Should().Contain("... and 5 more");
+        Assert.Contains("file10.cs", message);
+        Assert.DoesNotContain("file11.cs", message);
+        Assert.Contains("... and 5 more", message);
     }
 
     [Fact]
@@ -239,7 +238,7 @@ public class GitServiceTests
         var message = _sut.GenerateCommitMessage(workItem, result);
 
         // Assert
-        message.Should().Contain("Automated commit by Bartleby");
+        Assert.Contains("Automated commit by Bartleby", message);
     }
 
     [Fact]
@@ -255,8 +254,8 @@ public class GitServiceTests
 
         // Assert
         var firstLine = message.Split('\n')[0].TrimEnd('\r');
-        firstLine.Length.Should().BeLessThanOrEqualTo(72);
-        firstLine.Should().EndWith("...");
+        Assert.True(firstLine.Length <= 72);
+        Assert.EndsWith("...", firstLine);
     }
 
     #endregion
@@ -290,9 +289,9 @@ public class GitServiceTests
         var result = await _sut.CreateOrSwitchToBranchAsync(workItem, "/work");
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.BranchName.Should().Be(expectedBranchName);
-        result.Message.Should().Contain("Created");
+        Assert.True(result.Success);
+        Assert.Equal(expectedBranchName, result.BranchName);
+        Assert.Contains("Created", result.Message);
         _repositoryMock.Verify(r => r.CreateBranch(expectedBranchName), Times.Once);
         _repositoryMock.Verify(r => r.Checkout(newBranchMock.Object, null), Times.Once);
     }
@@ -323,9 +322,9 @@ public class GitServiceTests
         var result = await _sut.CreateOrSwitchToBranchAsync(workItem, "/work");
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.BranchName.Should().Be(expectedBranchName);
-        result.Message.Should().Contain("existing");
+        Assert.True(result.Success);
+        Assert.Equal(expectedBranchName, result.BranchName);
+        Assert.Contains("existing", result.Message);
         _repositoryMock.Verify(r => r.CreateBranch(It.IsAny<string>()), Times.Never);
         _repositoryMock.Verify(r => r.Checkout(existingBranchMock.Object, null), Times.Once);
     }
@@ -355,8 +354,8 @@ public class GitServiceTests
         var result = await _sut.CreateOrSwitchToBranchAsync(workItem, "/work");
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.BranchName.Should().Be(expectedBranchName);
+        Assert.True(result.Success);
+        Assert.Equal(expectedBranchName, result.BranchName);
         _repositoryMock.Verify(r => r.Checkout(It.IsAny<Branch>(), It.IsAny<CheckoutOptions>()), Times.Never);
     }
 
@@ -395,8 +394,8 @@ public class GitServiceTests
         var result = await _sut.CreateOrSwitchToBranchAsync(workItem, "/work");
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Message.Should().Contain("Repository error");
+        Assert.False(result.Success);
+        Assert.Contains("Repository error", result.Message);
     }
 
     #endregion
@@ -416,9 +415,9 @@ public class GitServiceTests
         var result = await _sut.CommitChangesAsync(workItem, executionResult, "/work");
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.CommitSha.Should().Be("abc123def");
-        result.Message.Should().Contain("committed");
+        Assert.True(result.Success);
+        Assert.Equal("abc123def", result.CommitSha);
+        Assert.Contains("committed", result.Message);
     }
 
     [Fact]
@@ -434,8 +433,8 @@ public class GitServiceTests
         var result = await _sut.CommitChangesAsync(workItem, executionResult, "/work");
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Message.Should().Contain("No changes");
+        Assert.True(result.Success);
+        Assert.Contains("No changes", result.Message);
     }
 
     [Fact]
@@ -467,10 +466,10 @@ public class GitServiceTests
         var result = await _sut.CommitChangesAsync(workItem, executionResult, "/work");
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.HasConflicts.Should().BeTrue();
-        result.ConflictingFiles.Should().HaveCount(2);
-        result.ConflictingFiles.Should().Contain("file1.cs");
+        Assert.False(result.Success);
+        Assert.True(result.HasConflicts);
+        Assert.Equal(2, result.ConflictingFiles.Count);
+        Assert.Contains("file1.cs", result.ConflictingFiles);
     }
 
     [Fact]
@@ -514,8 +513,8 @@ public class GitServiceTests
         var status = await _sut.GetStatusAsync("/nonexistent/path");
 
         // Assert
-        status.IsValid.Should().BeFalse();
-        status.ErrorMessage.Should().Contain("Not a git repository");
+        Assert.False(status.IsValid);
+        Assert.Contains("Not a git repository", status.ErrorMessage);
     }
 
     #endregion
@@ -545,8 +544,8 @@ public class GitServiceTests
         var result = await _sut.PushAsync("/work");
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Message.Should().Contain("origin");
+        Assert.True(result.Success);
+        Assert.Contains("origin", result.Message);
     }
 
     [Fact]
@@ -565,8 +564,8 @@ public class GitServiceTests
         var result = await _sut.PushAsync("/work", "nonexistent");
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Message.Should().Contain("not found");
+        Assert.False(result.Success);
+        Assert.Contains("not found", result.Message);
     }
 
     [Fact]

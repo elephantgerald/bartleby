@@ -1,7 +1,6 @@
 using Bartleby.Core.Interfaces;
 using Bartleby.Core.Models;
 using Bartleby.Services;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -63,106 +62,106 @@ public class WorkExecutorTests
     [Fact]
     public void Constructor_WithNullAIProvider_ThrowsArgumentNullException()
     {
-        var act = () => new WorkExecutor(
+        var ex = Assert.Throws<ArgumentNullException>(() => new WorkExecutor(
             null!,
             _workItemRepoMock.Object,
             _sessionRepoMock.Object,
             _questionRepoMock.Object,
             _settingsRepoMock.Object,
             _promptTemplateProviderMock.Object,
-            _loggerMock.Object);
+            _loggerMock.Object));
 
-        act.Should().Throw<ArgumentNullException>().WithParameterName("aiProvider");
+        Assert.Equal("aiProvider", ex.ParamName);
     }
 
     [Fact]
     public void Constructor_WithNullWorkItemRepository_ThrowsArgumentNullException()
     {
-        var act = () => new WorkExecutor(
+        var ex = Assert.Throws<ArgumentNullException>(() => new WorkExecutor(
             _aiProviderMock.Object,
             null!,
             _sessionRepoMock.Object,
             _questionRepoMock.Object,
             _settingsRepoMock.Object,
             _promptTemplateProviderMock.Object,
-            _loggerMock.Object);
+            _loggerMock.Object));
 
-        act.Should().Throw<ArgumentNullException>().WithParameterName("workItemRepository");
+        Assert.Equal("workItemRepository", ex.ParamName);
     }
 
     [Fact]
     public void Constructor_WithNullSessionRepository_ThrowsArgumentNullException()
     {
-        var act = () => new WorkExecutor(
+        var ex = Assert.Throws<ArgumentNullException>(() => new WorkExecutor(
             _aiProviderMock.Object,
             _workItemRepoMock.Object,
             null!,
             _questionRepoMock.Object,
             _settingsRepoMock.Object,
             _promptTemplateProviderMock.Object,
-            _loggerMock.Object);
+            _loggerMock.Object));
 
-        act.Should().Throw<ArgumentNullException>().WithParameterName("workSessionRepository");
+        Assert.Equal("workSessionRepository", ex.ParamName);
     }
 
     [Fact]
     public void Constructor_WithNullQuestionRepository_ThrowsArgumentNullException()
     {
-        var act = () => new WorkExecutor(
+        var ex = Assert.Throws<ArgumentNullException>(() => new WorkExecutor(
             _aiProviderMock.Object,
             _workItemRepoMock.Object,
             _sessionRepoMock.Object,
             null!,
             _settingsRepoMock.Object,
             _promptTemplateProviderMock.Object,
-            _loggerMock.Object);
+            _loggerMock.Object));
 
-        act.Should().Throw<ArgumentNullException>().WithParameterName("blockedQuestionRepository");
+        Assert.Equal("blockedQuestionRepository", ex.ParamName);
     }
 
     [Fact]
     public void Constructor_WithNullSettingsRepository_ThrowsArgumentNullException()
     {
-        var act = () => new WorkExecutor(
+        var ex = Assert.Throws<ArgumentNullException>(() => new WorkExecutor(
             _aiProviderMock.Object,
             _workItemRepoMock.Object,
             _sessionRepoMock.Object,
             _questionRepoMock.Object,
             null!,
             _promptTemplateProviderMock.Object,
-            _loggerMock.Object);
+            _loggerMock.Object));
 
-        act.Should().Throw<ArgumentNullException>().WithParameterName("settingsRepository");
+        Assert.Equal("settingsRepository", ex.ParamName);
     }
 
     [Fact]
     public void Constructor_WithNullPromptTemplateProvider_ThrowsArgumentNullException()
     {
-        var act = () => new WorkExecutor(
+        var ex = Assert.Throws<ArgumentNullException>(() => new WorkExecutor(
             _aiProviderMock.Object,
             _workItemRepoMock.Object,
             _sessionRepoMock.Object,
             _questionRepoMock.Object,
             _settingsRepoMock.Object,
             null!,
-            _loggerMock.Object);
+            _loggerMock.Object));
 
-        act.Should().Throw<ArgumentNullException>().WithParameterName("promptTemplateProvider");
+        Assert.Equal("promptTemplateProvider", ex.ParamName);
     }
 
     [Fact]
     public void Constructor_WithNullLogger_ThrowsArgumentNullException()
     {
-        var act = () => new WorkExecutor(
+        var ex = Assert.Throws<ArgumentNullException>(() => new WorkExecutor(
             _aiProviderMock.Object,
             _workItemRepoMock.Object,
             _sessionRepoMock.Object,
             _questionRepoMock.Object,
             _settingsRepoMock.Object,
             _promptTemplateProviderMock.Object,
-            null!);
+            null!));
 
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
+        Assert.Equal("logger", ex.ParamName);
     }
 
     #endregion
@@ -202,13 +201,15 @@ public class WorkExecutorTests
         var response = await _sut.ExecuteAsync(context);
 
         // Assert
-        response.Success.Should().BeTrue();
-        response.Outcome.Should().Be(WorkExecutionOutcome.Completed);
-        response.TransformationType.Should().Be(TransformationType.Execute);
-        response.Summary.Should().Be("Work completed successfully");
-        response.ModifiedFiles.Should().BeEquivalentTo(["file1.cs", "file2.cs"]);
-        response.TokensUsed.Should().Be(1500);
-        response.WorkSession.Should().NotBeNull();
+        Assert.True(response.Success);
+        Assert.Equal(WorkExecutionOutcome.Completed, response.Outcome);
+        Assert.Equal(TransformationType.Execute, response.TransformationType);
+        Assert.Equal("Work completed successfully", response.Summary);
+        Assert.Equal(2, response.ModifiedFiles.Count);
+        Assert.Contains("file1.cs", response.ModifiedFiles);
+        Assert.Contains("file2.cs", response.ModifiedFiles);
+        Assert.Equal(1500, response.TokensUsed);
+        Assert.NotNull(response.WorkSession);
     }
 
     [Fact]
@@ -241,11 +242,11 @@ public class WorkExecutorTests
         await _sut.ExecuteAsync(context);
 
         // Assert
-        capturedSession.Should().NotBeNull();
-        capturedSession!.WorkItemId.Should().Be(context.WorkItem.Id);
-        capturedSession.TransformationType.Should().Be(TransformationType.Execute);
-        capturedSession.Outcome.Should().Be(WorkSessionOutcome.Completed);
-        capturedSession.TokensUsed.Should().Be(100);
+        Assert.NotNull(capturedSession);
+        Assert.Equal(context.WorkItem.Id, capturedSession!.WorkItemId);
+        Assert.Equal(TransformationType.Execute, capturedSession.TransformationType);
+        Assert.Equal(WorkSessionOutcome.Completed, capturedSession.Outcome);
+        Assert.Equal(100, capturedSession.TokensUsed);
     }
 
     [Fact]
@@ -278,9 +279,9 @@ public class WorkExecutorTests
         var response = await _sut.ExecuteAsync(context);
 
         // Assert
-        response.Success.Should().BeFalse();
-        response.Outcome.Should().Be(WorkExecutionOutcome.Blocked);
-        response.Questions.Should().HaveCount(2);
+        Assert.False(response.Success);
+        Assert.Equal(WorkExecutionOutcome.Blocked, response.Outcome);
+        Assert.Equal(2, response.Questions.Count);
 
         _questionRepoMock.Verify(
             r => r.CreateAsync(It.IsAny<BlockedQuestion>(), It.IsAny<CancellationToken>()),
@@ -341,13 +342,13 @@ public class WorkExecutorTests
         var response = await _sut.ExecuteAsync(context);
 
         // Assert
-        response.Success.Should().BeFalse();
-        response.Outcome.Should().Be(WorkExecutionOutcome.Failed);
-        response.ErrorMessage.Should().Contain("AI service unavailable");
+        Assert.False(response.Success);
+        Assert.Equal(WorkExecutionOutcome.Failed, response.Outcome);
+        Assert.Contains("AI service unavailable", response.ErrorMessage);
 
-        capturedSession.Should().NotBeNull();
-        capturedSession!.Outcome.Should().Be(WorkSessionOutcome.Failed);
-        capturedSession.ErrorMessage.Should().Contain("AI service unavailable");
+        Assert.NotNull(capturedSession);
+        Assert.Equal(WorkSessionOutcome.Failed, capturedSession!.Outcome);
+        Assert.Contains("AI service unavailable", capturedSession.ErrorMessage);
     }
 
     #endregion
@@ -366,7 +367,7 @@ public class WorkExecutorTests
         var result = await _sut.BuildContextAsync(Guid.NewGuid(), TransformationType.Execute);
 
         // Assert
-        result.Should().BeNull();
+        Assert.Null(result);
     }
 
     [Fact]
@@ -392,10 +393,10 @@ public class WorkExecutorTests
         var result = await _sut.BuildContextAsync(workItemId, TransformationType.Plan);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.WorkItem.Should().Be(workItem);
-        result.TransformationType.Should().Be(TransformationType.Plan);
-        result.WorkingDirectory.Should().Be("/test/work");
+        Assert.NotNull(result);
+        Assert.Equal(workItem, result!.WorkItem);
+        Assert.Equal(TransformationType.Plan, result.TransformationType);
+        Assert.Equal("/test/work", result.WorkingDirectory);
     }
 
     [Fact]
@@ -426,8 +427,8 @@ public class WorkExecutorTests
         var result = await _sut.BuildContextAsync(workItemId, TransformationType.Execute);
 
         // Assert
-        result!.PreviousSessions.Should().HaveCount(2);
-        result.PreviousSessions[0].StartedAt.Should().BeBefore(result.PreviousSessions[1].StartedAt);
+        Assert.Equal(2, result!.PreviousSessions.Count);
+        Assert.True(result.PreviousSessions[0].StartedAt < result.PreviousSessions[1].StartedAt);
     }
 
     [Fact]
@@ -459,8 +460,10 @@ public class WorkExecutorTests
         var result = await _sut.BuildContextAsync(workItemId, TransformationType.Execute);
 
         // Assert
-        result!.AnsweredQuestions.Should().HaveCount(2);
-        result.AnsweredQuestions.Select(q => q.Question).Should().BeEquivalentTo(["Q1", "Q3"]);
+        Assert.Equal(2, result!.AnsweredQuestions.Count);
+        var questionTexts = result.AnsweredQuestions.Select(q => q.Question).ToList();
+        Assert.Contains("Q1", questionTexts);
+        Assert.Contains("Q3", questionTexts);
     }
 
     #endregion
@@ -485,7 +488,7 @@ public class WorkExecutorTests
         var result = await _sut.GetNextTransformationAsync(workItemId);
 
         // Assert
-        result.Should().Be(TransformationType.Interpret);
+        Assert.Equal(TransformationType.Interpret, result);
     }
 
     [Fact]
@@ -519,7 +522,7 @@ public class WorkExecutorTests
         var result = await _sut.GetNextTransformationAsync(workItemId);
 
         // Assert
-        result.Should().Be(TransformationType.AskClarification);
+        Assert.Equal(TransformationType.AskClarification, result);
     }
 
     [Fact]
@@ -550,7 +553,7 @@ public class WorkExecutorTests
         var result = await _sut.GetNextTransformationAsync(workItemId);
 
         // Assert
-        result.Should().Be(TransformationType.Plan);
+        Assert.Equal(TransformationType.Plan, result);
     }
 
     [Fact]
@@ -581,7 +584,7 @@ public class WorkExecutorTests
         var result = await _sut.GetNextTransformationAsync(workItemId);
 
         // Assert
-        result.Should().Be(TransformationType.Execute);
+        Assert.Equal(TransformationType.Execute, result);
     }
 
     [Fact]
@@ -612,7 +615,7 @@ public class WorkExecutorTests
         var result = await _sut.GetNextTransformationAsync(workItemId);
 
         // Assert
-        result.Should().Be(TransformationType.Refine);
+        Assert.Equal(TransformationType.Refine, result);
     }
 
     #endregion

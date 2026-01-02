@@ -1,7 +1,6 @@
 using Bartleby.Core.Interfaces;
 using Bartleby.Core.Models;
 using Bartleby.Services.Prompts;
-using FluentAssertions;
 
 namespace Bartleby.Services.Tests.Prompts;
 
@@ -27,7 +26,7 @@ public class PromptTemplateProviderTests
         var prompt = _sut.GetSystemPrompt(type, workingDirectory);
 
         // Assert
-        prompt.Should().Contain(workingDirectory);
+        Assert.Contains(workingDirectory, prompt);
     }
 
     [Theory]
@@ -43,10 +42,10 @@ public class PromptTemplateProviderTests
         var prompt = _sut.GetSystemPrompt(type, "/work");
 
         // Assert
-        prompt.Should().Contain("outcome");
-        prompt.Should().Contain("summary");
-        prompt.Should().Contain("modified_files");
-        prompt.Should().Contain("questions");
+        Assert.Contains("outcome", prompt);
+        Assert.Contains("summary", prompt);
+        Assert.Contains("modified_files", prompt);
+        Assert.Contains("questions", prompt);
     }
 
     [Fact]
@@ -56,9 +55,9 @@ public class PromptTemplateProviderTests
         var prompt = _sut.GetSystemPrompt(TransformationType.Interpret, "/work");
 
         // Assert
-        prompt.Should().Contain("TRANSFORMATION: Interpret");
-        prompt.Should().Contain("interpret");
-        prompt.Should().Contain("clarify");
+        Assert.Contains("TRANSFORMATION: Interpret", prompt);
+        Assert.Contains("interpret", prompt);
+        Assert.Contains("clarify", prompt);
     }
 
     [Fact]
@@ -68,9 +67,9 @@ public class PromptTemplateProviderTests
         var prompt = _sut.GetSystemPrompt(TransformationType.Plan, "/work");
 
         // Assert
-        prompt.Should().Contain("TRANSFORMATION: Plan");
-        prompt.Should().Contain("implementation plan");
-        prompt.Should().Contain("steps");
+        Assert.Contains("TRANSFORMATION: Plan", prompt);
+        Assert.Contains("implementation plan", prompt);
+        Assert.Contains("steps", prompt);
     }
 
     [Fact]
@@ -80,8 +79,8 @@ public class PromptTemplateProviderTests
         var prompt = _sut.GetSystemPrompt(TransformationType.Execute, "/work");
 
         // Assert
-        prompt.Should().Contain("TRANSFORMATION: Execute");
-        prompt.Should().Contain("implement");
+        Assert.Contains("TRANSFORMATION: Execute", prompt);
+        Assert.Contains("implement", prompt);
     }
 
     [Fact]
@@ -91,8 +90,8 @@ public class PromptTemplateProviderTests
         var prompt = _sut.GetSystemPrompt(TransformationType.Refine, "/work");
 
         // Assert
-        prompt.Should().Contain("TRANSFORMATION: Refine");
-        prompt.Should().Contain("refine");
+        Assert.Contains("TRANSFORMATION: Refine", prompt);
+        Assert.Contains("refine", prompt);
     }
 
     [Fact]
@@ -102,8 +101,8 @@ public class PromptTemplateProviderTests
         var prompt = _sut.GetSystemPrompt(TransformationType.AskClarification, "/work");
 
         // Assert
-        prompt.Should().Contain("TRANSFORMATION: Ask Clarification");
-        prompt.Should().Contain("questions");
+        Assert.Contains("TRANSFORMATION: Ask Clarification", prompt);
+        Assert.Contains("questions", prompt);
     }
 
     [Fact]
@@ -113,8 +112,8 @@ public class PromptTemplateProviderTests
         var prompt = _sut.GetSystemPrompt(TransformationType.Finalize, "/work");
 
         // Assert
-        prompt.Should().Contain("TRANSFORMATION: Finalize");
-        prompt.Should().Contain("verify");
+        Assert.Contains("TRANSFORMATION: Finalize", prompt);
+        Assert.Contains("verify", prompt);
     }
 
     [Fact]
@@ -124,9 +123,9 @@ public class PromptTemplateProviderTests
         var prompt = _sut.GetSystemPrompt(TransformationType.Execute, "/work");
 
         // Assert
-        prompt.Should().Contain("Bartleby");
-        prompt.Should().Contain("provenance");
-        prompt.Should().Contain("parsimony");
+        Assert.Contains("Bartleby", prompt);
+        Assert.Contains("provenance", prompt);
+        Assert.Contains("parsimony", prompt);
     }
 
     #endregion
@@ -138,7 +137,7 @@ public class PromptTemplateProviderTests
     {
         var act = () => _sut.BuildUserPrompt(null!);
 
-        act.Should().Throw<ArgumentNullException>();
+        Assert.Throws<ArgumentNullException>(act);
     }
 
     [Fact]
@@ -151,7 +150,7 @@ public class PromptTemplateProviderTests
         var prompt = _sut.BuildUserPrompt(context);
 
         // Assert
-        prompt.Should().Contain("Test Feature Implementation");
+        Assert.Contains("Test Feature Implementation", prompt);
     }
 
     [Fact]
@@ -165,7 +164,7 @@ public class PromptTemplateProviderTests
         var prompt = _sut.BuildUserPrompt(context);
 
         // Assert
-        prompt.Should().Contain("Implement the new authentication feature");
+        Assert.Contains("Implement the new authentication feature", prompt);
     }
 
     [Fact]
@@ -179,9 +178,9 @@ public class PromptTemplateProviderTests
         var prompt = _sut.BuildUserPrompt(context);
 
         // Assert
-        prompt.Should().Contain("feature");
-        prompt.Should().Contain("auth");
-        prompt.Should().Contain("priority-high");
+        Assert.Contains("feature", prompt);
+        Assert.Contains("auth", prompt);
+        Assert.Contains("priority-high", prompt);
     }
 
     [Fact]
@@ -195,7 +194,7 @@ public class PromptTemplateProviderTests
         var prompt = _sut.BuildUserPrompt(context);
 
         // Assert
-        prompt.Should().Contain("https://github.com/test/repo/issues/123");
+        Assert.Contains("https://github.com/test/repo/issues/123", prompt);
     }
 
     [Fact]
@@ -224,11 +223,11 @@ public class PromptTemplateProviderTests
         var prompt = _sut.BuildUserPrompt(context);
 
         // Assert
-        prompt.Should().Contain("Previous Work Sessions");
-        prompt.Should().Contain("Plan");
-        prompt.Should().Contain("Completed");
-        prompt.Should().Contain("Created implementation plan");
-        prompt.Should().Contain("PLAN.md");
+        Assert.Contains("Previous Work Sessions", prompt);
+        Assert.Contains("Plan", prompt);
+        Assert.Contains("Completed", prompt);
+        Assert.Contains("Created implementation plan", prompt);
+        Assert.Contains("PLAN.md", prompt);
     }
 
     [Fact]
@@ -259,11 +258,11 @@ public class PromptTemplateProviderTests
         var prompt = _sut.BuildUserPrompt(context);
 
         // Assert
-        prompt.Should().Contain("Answered Questions");
-        prompt.Should().Contain("Which database should we use?");
-        prompt.Should().Contain("PostgreSQL");
-        prompt.Should().Contain("Should we use ORM?");
-        prompt.Should().Contain("Yes, use Entity Framework");
+        Assert.Contains("Answered Questions", prompt);
+        Assert.Contains("Which database should we use?", prompt);
+        Assert.Contains("PostgreSQL", prompt);
+        Assert.Contains("Should we use ORM?", prompt);
+        Assert.Contains("Yes, use Entity Framework", prompt);
     }
 
     [Fact]
@@ -282,8 +281,8 @@ public class PromptTemplateProviderTests
         var prompt = _sut.BuildUserPrompt(context);
 
         // Assert
-        prompt.Should().Contain("Additional Instructions");
-        prompt.Should().Contain("Focus on performance optimization");
+        Assert.Contains("Additional Instructions", prompt);
+        Assert.Contains("Focus on performance optimization", prompt);
     }
 
     [Fact]
@@ -308,10 +307,10 @@ public class PromptTemplateProviderTests
         var prompt = _sut.BuildUserPrompt(context);
 
         // Assert
-        prompt.Should().NotContain("Labels:");
-        prompt.Should().NotContain("Previous Work Sessions");
-        prompt.Should().NotContain("Answered Questions");
-        prompt.Should().NotContain("Additional Instructions");
+        Assert.DoesNotContain("Labels:", prompt);
+        Assert.DoesNotContain("Previous Work Sessions", prompt);
+        Assert.DoesNotContain("Answered Questions", prompt);
+        Assert.DoesNotContain("Additional Instructions", prompt);
     }
 
     #endregion

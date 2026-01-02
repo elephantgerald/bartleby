@@ -1,7 +1,6 @@
 using Bartleby.Core.Interfaces;
 using Bartleby.Core.Models;
 using Bartleby.Infrastructure.Git;
-using FluentAssertions;
 using LibGit2Sharp;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -68,7 +67,7 @@ public class GitServiceIntegrationTests : IDisposable
         var result = _sut.IsGitRepository(_testDirectory);
 
         // Assert
-        result.Should().BeFalse();
+        Assert.False(result);
     }
 
     [Fact]
@@ -81,7 +80,7 @@ public class GitServiceIntegrationTests : IDisposable
         var result = _sut.IsGitRepository(_testDirectory);
 
         // Assert
-        result.Should().BeTrue();
+        Assert.True(result);
     }
 
     [Fact]
@@ -96,7 +95,7 @@ public class GitServiceIntegrationTests : IDisposable
         var result = _sut.IsGitRepository(subDir);
 
         // Assert
-        result.Should().BeTrue();
+        Assert.True(result);
     }
 
     #endregion
@@ -110,9 +109,9 @@ public class GitServiceIntegrationTests : IDisposable
         var result = await _sut.InitializeRepositoryAsync(_testDirectory);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Message.Should().Contain("initialized");
-        _sut.IsGitRepository(_testDirectory).Should().BeTrue();
+        Assert.True(result.Success);
+        Assert.Contains("initialized", result.Message);
+        Assert.True(_sut.IsGitRepository(_testDirectory));
     }
 
     [Fact]
@@ -125,8 +124,8 @@ public class GitServiceIntegrationTests : IDisposable
         var result = await _sut.InitializeRepositoryAsync(_testDirectory);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Message.Should().Contain("already exists");
+        Assert.True(result.Success);
+        Assert.Contains("already exists", result.Message);
     }
 
     #endregion
@@ -144,13 +143,13 @@ public class GitServiceIntegrationTests : IDisposable
         var result = await _sut.CreateOrSwitchToBranchAsync(workItem, _testDirectory);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.BranchName.Should().Be("bartleby/123-add-feature");
-        result.Message.Should().Contain("Created");
+        Assert.True(result.Success);
+        Assert.Equal("bartleby/123-add-feature", result.BranchName);
+        Assert.Contains("Created", result.Message);
 
         // Verify we're on the new branch
         using var repo = new Repository(_testDirectory);
-        repo.Head.FriendlyName.Should().Be("bartleby/123-add-feature");
+        Assert.Equal("bartleby/123-add-feature", repo.Head.FriendlyName);
     }
 
     [Fact]
@@ -170,9 +169,9 @@ public class GitServiceIntegrationTests : IDisposable
         var result = await _sut.CreateOrSwitchToBranchAsync(workItem, _testDirectory);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.BranchName.Should().Be("bartleby/456-existing-feature");
-        result.Message.Should().Contain("existing");
+        Assert.True(result.Success);
+        Assert.Equal("bartleby/456-existing-feature", result.BranchName);
+        Assert.Contains("existing", result.Message);
     }
 
     #endregion
@@ -195,15 +194,15 @@ public class GitServiceIntegrationTests : IDisposable
         var result = await _sut.CommitChangesAsync(workItem, executionResult, _testDirectory);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.CommitSha.Should().NotBeNullOrEmpty();
-        result.Message.Should().Contain("committed");
+        Assert.True(result.Success);
+        Assert.False(string.IsNullOrEmpty(result.CommitSha));
+        Assert.Contains("committed", result.Message);
 
         // Verify commit exists
         using var repo = new Repository(_testDirectory);
         var commit = repo.Head.Tip;
-        commit.Message.Should().Contain("feat: Add feature");
-        commit.Message.Should().Contain("Added new functionality");
+        Assert.Contains("feat: Add feature", commit.Message);
+        Assert.Contains("Added new functionality", commit.Message);
     }
 
     [Fact]
@@ -220,8 +219,8 @@ public class GitServiceIntegrationTests : IDisposable
         var result = await _sut.CommitChangesAsync(workItem, executionResult, _testDirectory);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Message.Should().Contain("No changes");
+        Assert.True(result.Success);
+        Assert.Contains("No changes", result.Message);
     }
 
     [Fact]
@@ -240,13 +239,13 @@ public class GitServiceIntegrationTests : IDisposable
         var result = await _sut.CommitChangesAsync(workItem, executionResult, _testDirectory);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.CommitSha.Should().NotBeNullOrEmpty();
+        Assert.True(result.Success);
+        Assert.False(string.IsNullOrEmpty(result.CommitSha));
 
         // Verify commit message uses "fix" type
         using var repo = new Repository(_testDirectory);
         var commit = repo.Head.Tip;
-        commit.Message.Should().StartWith("fix: Fix bug");
+        Assert.StartsWith("fix: Fix bug", commit.Message);
     }
 
     #endregion
@@ -263,11 +262,11 @@ public class GitServiceIntegrationTests : IDisposable
         var status = await _sut.GetStatusAsync(_testDirectory);
 
         // Assert
-        status.IsValid.Should().BeTrue();
-        status.CurrentBranch.Should().Be("main");
-        status.HasUncommittedChanges.Should().BeFalse();
-        status.HasStagedChanges.Should().BeFalse();
-        status.HasUntrackedFiles.Should().BeFalse();
+        Assert.True(status.IsValid);
+        Assert.Equal("main", status.CurrentBranch);
+        Assert.False(status.HasUncommittedChanges);
+        Assert.False(status.HasStagedChanges);
+        Assert.False(status.HasUntrackedFiles);
     }
 
     [Fact]
@@ -282,9 +281,9 @@ public class GitServiceIntegrationTests : IDisposable
         var status = await _sut.GetStatusAsync(_testDirectory);
 
         // Assert
-        status.IsValid.Should().BeTrue();
-        status.HasUncommittedChanges.Should().BeTrue();
-        status.ModifiedFiles.Should().Contain("README.md");
+        Assert.True(status.IsValid);
+        Assert.True(status.HasUncommittedChanges);
+        Assert.Contains("README.md", status.ModifiedFiles);
     }
 
     [Fact]
@@ -299,9 +298,9 @@ public class GitServiceIntegrationTests : IDisposable
         var status = await _sut.GetStatusAsync(_testDirectory);
 
         // Assert
-        status.IsValid.Should().BeTrue();
-        status.HasUntrackedFiles.Should().BeTrue();
-        status.UntrackedFiles.Should().Contain("newfile.txt");
+        Assert.True(status.IsValid);
+        Assert.True(status.HasUntrackedFiles);
+        Assert.Contains("newfile.txt", status.UntrackedFiles);
     }
 
     [Fact]
@@ -313,8 +312,8 @@ public class GitServiceIntegrationTests : IDisposable
         var status = await _sut.GetStatusAsync(_testDirectory);
 
         // Assert
-        status.IsValid.Should().BeFalse();
-        status.ErrorMessage.Should().Contain("Not a git repository");
+        Assert.False(status.IsValid);
+        Assert.Contains("Not a git repository", status.ErrorMessage);
     }
 
     #endregion

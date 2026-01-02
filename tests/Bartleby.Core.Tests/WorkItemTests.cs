@@ -1,5 +1,4 @@
 using Bartleby.Core.Models;
-using FluentAssertions;
 
 namespace Bartleby.Core.Tests;
 
@@ -12,13 +11,13 @@ public class WorkItemTests
         var workItem = new WorkItem();
 
         // Assert
-        workItem.Id.Should().NotBeEmpty();
-        workItem.Title.Should().BeEmpty();
-        workItem.Description.Should().BeEmpty();
-        workItem.Status.Should().Be(WorkItemStatus.Pending);
-        workItem.Dependencies.Should().BeEmpty();
-        workItem.Labels.Should().BeEmpty();
-        workItem.AttemptCount.Should().Be(0);
+        Assert.NotEqual(Guid.Empty, workItem.Id);
+        Assert.Empty(workItem.Title);
+        Assert.Empty(workItem.Description);
+        Assert.Equal(WorkItemStatus.Pending, workItem.Status);
+        Assert.Empty(workItem.Dependencies);
+        Assert.Empty(workItem.Labels);
+        Assert.Equal(0, workItem.AttemptCount);
     }
 
     [Fact]
@@ -37,9 +36,9 @@ public class WorkItemTests
         };
 
         // Assert
-        workItem.Title.Should().Be(title);
-        workItem.Description.Should().Be(description);
-        workItem.Status.Should().Be(WorkItemStatus.Ready);
+        Assert.Equal(title, workItem.Title);
+        Assert.Equal(description, workItem.Description);
+        Assert.Equal(WorkItemStatus.Ready, workItem.Status);
     }
 
     [Fact]
@@ -51,7 +50,7 @@ public class WorkItemTests
             var workItem = new WorkItem { Status = status };
 
             // Assert
-            workItem.Status.Should().Be(status);
+            Assert.Equal(status, workItem.Status);
         }
     }
 }
