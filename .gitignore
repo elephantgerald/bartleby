@@ -38,12 +38,7 @@ project.lock.json
 project.fragment.lock.json
 artifacts/
 
-# .NET Core
-project.lock.json
-project.fragment.lock.json
-artifacts/
-
-# User-specific files
+# User-specific files (duplicates of VS section above, kept for safety)
 *.rsuser
 *.suo
 *.user
@@ -103,10 +98,38 @@ publish/
 BenchmarkDotNet.Artifacts/
 
 # Secrets and credentials
+# Certificate/key files
 *.pfx
 *.p12
+*.pem
+*.key
+*.cer
+*.crt
+
+# .NET user secrets and local overrides
 appsettings.local.json
+appsettings.*.local.json
+# Environment-specific appsettings often contain real credentials — use local overrides instead
+appsettings.Development.json
+appsettings.Staging.json
+appsettings.Production.json
 secrets.json
+usersecrets.json
+**/Properties/secrets.json
+
+# .NET Secret Manager output
+**/UserSecrets/
+
+# Environment variable files
+.env
+.env.*
+!.env.example
+!.env.template
+
+# Generic secret stores
+.secrets
+.secrets/
+**/.secrets/
 
 # Claude Code
 .claude/settings.local.json
